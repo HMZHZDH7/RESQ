@@ -6,6 +6,7 @@ services:
     image: rasa/rasa:3.6.20-full
     volumes:
       - ./:/app
+      - ./models:/app/models  # Ensure the models directory is mounted
     command: ["run", "--cors", "*", "--enable-api", "--debug"]
     restart: always
     depends_on:

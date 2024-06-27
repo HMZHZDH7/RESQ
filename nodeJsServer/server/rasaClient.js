@@ -10,7 +10,7 @@ function sendMessageToRasa(message, user_id) {
     },
     body: JSON.stringify({ sender: user_id, message }),
   })
-    .then(response => response.json())
+    .then(response => response.json();)
     .then(data => {
       // Format the response
       console.log(data);
