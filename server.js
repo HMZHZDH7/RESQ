@@ -4,7 +4,10 @@ const WebSocket = require('ws');
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
+const { v4: uuidv4 } = require('uuid'); // Import uuid to generate unique IDs
+
 const webpackConfig = require('./webpack.vendor.config');
+const rasaClient = require('./server/rasaClient');
 
 const app = express();
 const server = http.createServer(app);
@@ -33,27 +36,56 @@ app.get('/', (req, res) => {
 
 // Handle WebSocket connections
 wss.on('connection', (ws) => {
-  console.log('Client connected');
+  const user_id = uuidv4();  // Generate a unique user_id for this session
+  console.log(`New client connected with user_id: ${user_id}`);
 
   ws.on('message', (message) => {
     const parsedMessage = JSON.parse(message);
 
     if (parsedMessage.action === 'fetchData') {
-      console.log(`Client asking for ${parsedMessage.json_name}`);
-      const jsonData = fs.readFileSync(path.join(__dirname, 'client', 'data', `${parsedMessage.json_name}.json`));
-      ws.send(JSON.stringify({
-        requestId: parsedMessage.requestId,
-        json_name: parsedMessage.json_name,
-        data: JSON.parse(jsonData),
-      }));
-    } else if (parsedMessage.message) {
-      // Handle other message actions if necessary
-      ws.send(JSON.stringify({
-        requestId: parsedMessage.requestId,
-        message: 'Your message has been received',
-        data: {} // Add any additional data if needed
-      }));
-    } else {
+      try {
+        console.log(`Client asking for ${parsedMessage.json_name}.json`);
+        const jsonData = fs.readFileSync(path.join(__dirname, 'client', 'data', `${parsedMessage.json_name}.json`));
+        ws.send(JSON.stringify({
+          requestId: parsedMessage.requestId,
+          error : false,
+          json_name: parsedMessage.json_name,
+          data: JSON.parse(jsonData) }));
+      } catch (error) {
+        console.error('Error reading JSON file:', error);
+        ws.send(JSON.stringify({
+          requestId: parsedMessage.requestId,
+          error : true,
+          json_name: parsedMessage.json_name,
+          message: 'Failed to read JSON file' }));
+      }
+    }
+
+    else if (parsedMessage.action === 'sendMessageToRasa') {
+      console.log(`${user_id} asking : ${parsedMessage.message}`);
+      rasaClient.sendMessageToRasa(parsedMessage.message, user_id)
+        .then(response => {
+          console.log("Response from Rasa Server :");
+          console.log(response);
+
+          ws.send(JSON.stringify({
+            requestId: parsedMessage.requestId,
+            error : false,
+            message: response.message,
+            data: response.data
+          }));
+        })
+        .catch(error => {
+          console.error('Error sending message to Rasa:', error);
+          ws.send(JSON.stringify({
+            requestId: parsedMessage.requestId,
+            error : true,
+            message: 'Failed to process message with Rasa',
+          }));
+        });
+    }
+
+    else {
       console.log(`Received: ${message}`);
     }
   });
@@ -61,7 +93,7 @@ wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ message: 'Hello from server' }));
 
   ws.on('close', () => {
-    console.log('Client disconnected');
+    console.log(`Client disconnected ${user_id}\n`);
   });
 
   ws.onerror = (error) => {

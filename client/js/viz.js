@@ -4,22 +4,30 @@ import { fetchData } from './socket.js';
 
 var allChartsThatWeHaveSaved = [];
 
-// Function to create the line chart
-export async function createLineChart(log, json_names) {
-    let data;
-    let args;
+let args; // /!\ TEMPORARY GLOBAL VAR UNTIL WE CAN TELL IF RASA SEND ARGS OR DATA
 
-    try {
+export async function createInitalChart(log, json_names) {
+  let data;
+
+  try {
     console.log(`Fetching data for ${json_names[0]}`);
     data = await fetchData(json_names[0]);
     console.log(data);
     console.log(`Fetching args for ${json_names[1]}`);
     args = await fetchData(json_names[1]);
     console.log(args);
-  } catch (error) {
-    console.error('Error fetching data:', error);
-  }
 
+    createLineChart(log, data, args);
+  }
+  catch (error) {
+  console.error('Error fetching data:', error);
+  }
+}
+
+// Function to create the line chart
+export async function createLineChart(log, data) {
+  console.log("Creating a new chart from :");
+  console.log(data);
  if (data && args) {
     const labels = data.map(item => item.YQ);
     const values = data.map(item => item.Value);
@@ -47,32 +55,6 @@ export async function createLineChart(log, json_names) {
             pointBackgroundColor: '#2196f3',
         });
     }
-    /*
-    if (log === true) {
-        const logger = 'https://dashboards.create.aau.dk/log_manager';
-        const data_to_log = {
-            message: "rando",
-            type: 'data'
-        };
-
-        fetch(logger, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data_to_log)
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to post message.');
-                }
-                console.log('Message posted successfully.');
-            })
-            .catch(error => {
-                console.error('Error posting message:', error);
-            });
-    }
-    */
 
     setupXYFiltering(labels, values);
 

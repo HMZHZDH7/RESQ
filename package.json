@@ -12,6 +12,8 @@
   "dependencies": {
     "chart.js": "^4.4.3",
     "express": "^4.19.2",
+    "node-fetch": "^2.7.0",
+    "uuidv4": "^6.2.13",
     "ws": "^8.17.0"
   },
   "devDependencies": {

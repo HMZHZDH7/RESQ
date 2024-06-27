@@ -1,4 +1,5 @@
 import { sendMessageServer, fetchData } from './socket.js';
+import { createLineChart } from './viz.js';
 
 // WebSocket
 let xy = {};
@@ -150,11 +151,15 @@ async function sendMessage() {
     userMessageContainer.appendChild(userMessage);
 
     chatContainer.appendChild(userMessageContainer);
+    messageInput.value = "";
 
     // Send message through WebSocket
-    sendMessageServer(message);
-
-    messageInput.value = "";
+    let data = await sendMessageServer(message);
+    getMessage('Done, Creating chart with the received data ....');
+    for (let item of data) {
+        await createLineChart(false, item);
+    }
+    getMessage("Done")
   }
 }
 
