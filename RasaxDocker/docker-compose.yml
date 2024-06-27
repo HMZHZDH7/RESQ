@@ -1,0 +1,47 @@
+version: '3.1'
+
+services:
+  RasaxDocker:
+    container_name: RasaxDocker
+    image: rasa/rasa:3.6.15-full
+    volumes:
+      - ./:/app
+    command:
+      - run
+      - --cors
+      - "*"
+      - --enable-api
+      - --debug
+    restart: always
+    depends_on:
+      - actions
+    ports:
+      - "5005:5005"
+    networks:
+      - rasax_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 1m
+
+  actions:
+    container_name: RasaxDocker_actions
+    build: ./
+    command: ["start", "--actions", "actions", "--auto-reload"]
+    restart: always
+    ports:
+      - "5055:5055"
+    networks:
+      - rasax_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -X POST http://localhost:5055/webhook -H \"Content-Type: application/json\" -d @/app/tests/payload.json"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 1m
+
+networks:
+  rasax_network:
+    driver: bridge

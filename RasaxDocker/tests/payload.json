@@ -1,0 +1,44 @@
+{
+  "next_action": "action_initialise",
+  "tracker": {
+    "sender_id": "test_user",
+    "slots": {
+      "selected_value": "door_to_needle",
+      "nat_value": false,
+      "plot_type": "line"
+    },
+    "latest_message": {
+      "text": "Hello",
+      "intent": {
+        "name": "greet",
+        "confidence": 0.99
+      },
+      "entities": []
+    },
+    "paused": false,
+    "events": []
+  },
+  "domain": {
+    "intents": ["greet", "goodbye"],
+    "entities": [],
+    "slots": {
+      "selected_value": {
+        "type": "text",
+        "initial_value": null,
+        "auto_fill": true
+      },
+      "nat_value": {
+        "type": "bool",
+        "initial_value": false,
+        "auto_fill": true
+      },
+      "plot_type": {
+        "type": "text",
+        "initial_value": null,
+        "auto_fill": true
+      }
+    },
+    "responses": {},
+    "actions": ["action_initialise"]
+  }
+}
