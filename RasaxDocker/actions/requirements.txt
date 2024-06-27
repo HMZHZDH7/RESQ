@@ -1,7 +1,10 @@
 rasa==3.6.20
 rasa-sdk==3.6.2
-shap==0.39.0 --no-binary shap
+shap==0.39 --no-binary shap
+packaging
+
 numpy
 scikit-learn
 pandas
 scipy
+SQLAlchemy<2.0

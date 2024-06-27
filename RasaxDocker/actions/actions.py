@@ -1,12 +1,4 @@
-# This files contains your custom actions which can be used to run
-# custom Python code.
-#
-# See this guide on how to implement these action:
-# https://rasa.com/docs/rasa/custom-actions
 from rasa.core.actions.forms import FormAction
-
-# This is a simple example for a custom action which utters "Hello World!"
-
 from actions.utils import plot_handler
 from typing import Any, Text, Dict, List
 from rasa_sdk import Action, Tracker, FormValidationAction
@@ -14,12 +6,11 @@ from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
 from rasa_sdk.types import DomainDict
 
-# SOCKET = sockets.Socket()
 PLOT_HANDLER = plot_handler.PlotHandler()
 ALLOWED_PLOT_TYPES = ["line", "bar", "pie", "barh"]
 ALLOWED_SELECTED_VALUES = ["age", "gender", "hospital_stroke", "stroke_type",
                            "nihss_score", "thrombolysis", "no_thrombolysis_reason", "door_to_needle", "door_to_imaging",
-                           "onset_to_door", "imaging_done", "imaging_type", "dysphagia_screening_type", "door_to_groin"
+                           "onset_to_door", "imaging_done", "imaging_type", "dysphagia_screening_type", "door_to_groin",
                            "before_onset_antidiabetics", "before_onset_cilostazol", "before_onset_clopidrogel",
                            "before_onset_ticagrelor", "before_onset_ticlopidine", "before_onset_prasugrel",
                            "before_onset_dipyridamol", "before_onset_warfarin", "risk_hypertension", "risk_diabetes",
@@ -32,8 +23,6 @@ ALLOWED_SELECTED_VALUES = ["age", "gender", "hospital_stroke", "stroke_type",
                            "stroke_mimics_diagnosis", "prestroke_mrs", "tici_score", "prenotification", "ich_score",
                            "hunt_hess_score"]
 
-
-
 class ActionChangePlottype(Action):
 
     def name(self) -> Text:
@@ -44,19 +33,15 @@ class ActionChangePlottype(Action):
             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         plot_type = tracker.get_slot("plot_type")
 
-        print(plot_type)
-
         if plot_type:
             if plot_type.lower() not in ALLOWED_PLOT_TYPES:
                 dispatcher.utter_message(text=f"Sorry, I don't understand. Can you try rephrasing?")
                 return {"plot_type": None}
-            #dispatcher.utter_message(text=f"OK! I will create a {plot_type} plot.")
 
         PLOT_HANDLER.change_arg("type", plot_type)
         args = PLOT_HANDLER.send_args()
 
         dispatcher.utter_message(json_message={"args": args})
-
         return []
 
 
@@ -77,7 +62,6 @@ class ActionChangeSelectedvalue(Action):
             dispatcher.utter_message(text=f"OK! I will create a {selected_value} plot.")
 
         PLOT_HANDLER.change_arg("variable", selected_value)
-
         data = PLOT_HANDLER.edit_data(tracker.get_slot("nat_value"))
 
         dispatcher.utter_message(json_message={"data": data})
@@ -101,7 +85,6 @@ class ActionToggleNationalValue(Action):
         data = PLOT_HANDLER.edit_data(new_value)
 
         dispatcher.utter_message(text="We are {} the national value.".format("showing" if new_value else "hiding"))
-
         dispatcher.utter_message(json_message={"data": data, "args": args})
 
         return [SlotSet("nat_value", new_value)]
@@ -111,13 +94,9 @@ class PrefillSlots(Action):
         return "action_prefill_slots"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        # Logic to pre-fill slots
         plot_type = "line"
-
         nat_value = False
-
         selected_value = "door_to_needle"
-
         real_diff = False
 
         return [
@@ -142,6 +121,7 @@ class ActionInitialise(Action):
         PLOT_HANDLER.change_arg("variable", selected_value)
         args = PLOT_HANDLER.send_args()
         data = PLOT_HANDLER.edit_data(nat_value)
+
         dispatcher.utter_message(json_message={"data": data, "args": args})
         return []
 
@@ -154,22 +134,13 @@ class ActionVariableTTest(Action):
             tracker: Tracker,
             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
-        # Access dataframe from the tracker
-        #data = tracker.get_slot("data")
-
-        # Get the variable name from the tracker
-        #variable_name = tracker.get_slot("variable_name")
-
-        # Call the function to perform t-test
         p_value, cohens_d, no_2022_q2_data = PLOT_HANDLER.compare_to_past()
 
-        # Construct message based on results
         if no_2022_q2_data:
             message = f"There was no data available for 2022 Q2. Comparing 2022 Q1 to 2021 Q4, the p-value of the wilcoxon test is {p_value:.4f}, Cohen's d is {cohens_d:.4f}."
         else:
             message = f"Comparing 2022 Q2 to 2022 Q1, the p-value of the wilcoxon test is {p_value:.4f}, Cohen's d is {cohens_d:.4f}."
 
-        # Utter the message
         dispatcher.utter_message(text=message)
 
         if p_value < 0.1:
@@ -198,25 +169,16 @@ class ActionFindPredictors(Action):
         if error:
             dispatcher.utter_message(f"Error occurred: {error}")
         else:
-            # Round mean error and feature importances
             mean_error = round(feature_weights['Root Mean Squared Error'], 2)
-            rounded_feature_weights = {feat: round(weight, 2) for feat, weight in
-                                       feature_weights['Shap Values'].items()}
-
-            # Format the feature weights as a response
-            ##dispatcher.utter_message(f"Root Mean Squared Error: {mean_error}")
-            ##dispatcher.utter_message("\n\nFeature Importances:\n")
+            rounded_feature_weights = {feat: round(weight, 2) for feat, weight in feature_weights['Shap Values'].items()}
 
             selected_value = tracker.get_slot("selected_value")
-            dispatcher.utter_message(f"I built a seperate model to predict {selected_value} based only on data from your hospital")
+            dispatcher.utter_message(f"I built a separate model to predict {selected_value} based only on data from your hospital.")
             dispatcher.utter_message(f"The most important factors are:")
-            # Send feature importances as separate messages
             features_str = ", ".join(rounded_feature_weights.keys())
 
-            # Send a single message with all features separated by commas
             dispatcher.utter_message(features_str)
-
-            dispatcher.utter_message(f"Would you rather: explore how {selected_value} effects you patients or do you want to explore one of the variables I have listed?")
+            dispatcher.utter_message(f"Would you rather: explore how {selected_value} affects your patients or do you want to explore one of the variables I have listed?")
 
         return []
 
@@ -235,22 +197,14 @@ class ActionFindPredictorsGlobal(Action):
         if error:
             dispatcher.utter_message(f"Error occurred: {error}")
         else:
-            # Round mean error and feature importances
             mean_error = round(feature_weights['Root Mean Squared Error'], 2)
-            rounded_feature_weights = {feat: round(weight, 2) for feat, weight in
-                                       feature_weights['Shap Values'].items()}
+            rounded_feature_weights = {feat: round(weight, 2) for feat, weight in feature_weights['Shap Values'].items()}
 
-            # Format the feature weights as a response
-            #dispatcher.utter_message(f"Root Mean Squared Error: {mean_error}")
-            #dispatcher.utter_message("\n\nFeature Importances:\n")
             selected_value = tracker.get_slot("selected_value")
-            dispatcher.utter_message(f"I used the data I have from multiple hospitals including your to buld a regression model that predicts {selected_value}.")
-            dispatcher.utter_message(f"Based on my model, here are the indicators which influence {selected_value} the most, in order or largest to smallest influence:")
-            # Send feature importances as separate messages
-            # Concatenate features into a single string with commas
+            dispatcher.utter_message(f"I used the data I have from multiple hospitals including yours to build a regression model that predicts {selected_value}.")
+            dispatcher.utter_message(f"Based on my model, here are the indicators which influence {selected_value} the most, in order of largest to smallest influence:")
             features_str = ", ".join(rounded_feature_weights.keys())
 
-            # Send a single message with all features separated by commas
             dispatcher.utter_message(features_str)
 
         return []
@@ -268,11 +222,9 @@ class ActionExploreEffects(Action):
         selected_value = 'discharge_mrs'
         PLOT_HANDLER.change_arg('variable', selected_value)
         args = PLOT_HANDLER.send_args()
-
         data = PLOT_HANDLER.edit_data(False)
 
         dispatcher.utter_message(json_message={"data": data, "args": args})
-
         return [SlotSet("selected_value", selected_value)]
 
 
@@ -282,11 +234,12 @@ class ActionDNTGuideline(Action):
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         response = PLOT_HANDLER.DNT_guideline()
-        dispatcher.utter_message("The first guideline is that 75% of patients must be treated within 45 minutes..")
+        dispatcher.utter_message("The first guideline is that 75% of patients must be treated within 45 minutes.")
         dispatcher.utter_message("It looks like your hospital does meet the guideline for DNT. Should I continue checking more guidelines?")
         dispatcher.utter_message("The next one is about screening at least 90% of patients for dysphagia.")
 
         return []
+
 
 class ActionDysphagiaGuideline(Action):
     def name(self) -> Text:
@@ -296,9 +249,10 @@ class ActionDysphagiaGuideline(Action):
         response = PLOT_HANDLER.dysphagia_guideline()
 
         dispatcher.utter_message("While your hospital does screen many patients, you still do not meet the guideline on average. However, you did meet it for the most current quarter.")
-        dispatcher.utter_message("Should we check the last guideline? It's about 90% of elligible patients getting anticoagulents.")
+        dispatcher.utter_message("Should we check the last guideline? It's about 90% of eligible patients getting anticoagulants.")
 
         return []
+
 
 class ActionAnticoagsGuideline(Action):
     def name(self) -> Text:
@@ -307,7 +261,7 @@ class ActionAnticoagsGuideline(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         response = PLOT_HANDLER.guideline_anticoags()
 
-        dispatcher.utter_message("Again, your hospital provides the correct medication to many patients but does not meet the guideline of 90% except for the most redent quarter..")
-        dispatcher.utter_message("This is the last of the guidelines, let me know if you would like to explore somehting else.")
+        dispatcher.utter_message("Again, your hospital provides the correct medication to many patients but does not meet the guideline of 90% except for the most recent quarter.")
+        dispatcher.utter_message("This is the last of the guidelines, let me know if you would like to explore something else.")
 
         return []

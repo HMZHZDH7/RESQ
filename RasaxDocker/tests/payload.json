@@ -19,26 +19,25 @@
     "events": []
   },
   "domain": {
-    "intents": ["greet", "goodbye"],
+    "intents": [
+      "greet",
+      "goodbye"
+    ],
     "entities": [],
     "slots": {
       "selected_value": {
-        "type": "text",
-        "initial_value": null,
-        "auto_fill": true
+        "type": "text"
       },
       "nat_value": {
-        "type": "bool",
-        "initial_value": false,
-        "auto_fill": true
+        "type": "bool"
       },
       "plot_type": {
-        "type": "text",
-        "initial_value": null,
-        "auto_fill": true
+        "type": "text"
       }
     },
     "responses": {},
-    "actions": ["action_initialise"]
+    "actions": [
+      "action_initialise"
+    ]
   }
 }
