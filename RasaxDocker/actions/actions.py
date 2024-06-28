@@ -5,6 +5,9 @@ from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
 from rasa_sdk.types import DomainDict
+import logging
+
+logger = logging.getLogger(__name__)
 
 PLOT_HANDLER = plot_handler.PlotHandler()
 ALLOWED_PLOT_TYPES = ["line", "bar", "pie", "barh"]
@@ -42,6 +45,7 @@ class ActionChangePlottype(Action):
         args = PLOT_HANDLER.send_args()
 
         dispatcher.utter_message(json_message={"args": args})
+        logger.info({"args": args});
         return []
 
 
@@ -65,6 +69,7 @@ class ActionChangeSelectedvalue(Action):
         data = PLOT_HANDLER.edit_data(tracker.get_slot("nat_value"))
 
         dispatcher.utter_message(json_message={"data": data})
+        logger.info({"data": data})
         return []
 
 
@@ -86,7 +91,7 @@ class ActionToggleNationalValue(Action):
 
         dispatcher.utter_message(text="We are {} the national value.".format("showing" if new_value else "hiding"))
         dispatcher.utter_message(json_message={"data": data, "args": args})
-
+        logger.info({"data": data, "args": args})
         return [SlotSet("nat_value", new_value)]
 
 class PrefillSlots(Action):
@@ -123,6 +128,7 @@ class ActionInitialise(Action):
         data = PLOT_HANDLER.edit_data(nat_value)
 
         dispatcher.utter_message(json_message={"data": data, "args": args})
+        logger.info({"data": data, "args": args})
         return []
 
 
@@ -225,6 +231,7 @@ class ActionExploreEffects(Action):
         data = PLOT_HANDLER.edit_data(False)
 
         dispatcher.utter_message(json_message={"data": data, "args": args})
+        logger.info({"data": data, "args": args});
         return [SlotSet("selected_value", selected_value)]
 
 

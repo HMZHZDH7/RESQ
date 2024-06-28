@@ -4,20 +4,15 @@ import { fetchData } from './socket.js';
 
 var allChartsThatWeHaveSaved = [];
 
-let args; // /!\ TEMPORARY GLOBAL VAR UNTIL WE CAN TELL IF RASA SEND ARGS OR DATA
+var m_data;
+var m_args;
 
 export async function createInitalChart(log, json_names) {
-  let data;
 
   try {
-    console.log(`Fetching data for ${json_names[0]}`);
-    data = await fetchData(json_names[0]);
-    console.log(data);
-    console.log(`Fetching args for ${json_names[1]}`);
-    args = await fetchData(json_names[1]);
-    console.log(args);
-
-    createLineChart(log, data, args);
+    m_data = await fetchData(json_names[0]);
+    m_args = await fetchData(json_names[1]);
+    createLineChart(log, m_data, m_args);
   }
   catch (error) {
   console.error('Error fetching data:', error);
@@ -25,12 +20,28 @@ export async function createInitalChart(log, json_names) {
 }
 
 // Function to create the line chart
-export async function createLineChart(log, data) {
-  console.log("Creating a new chart from :");
-  console.log(data);
- if (data && args) {
-    const labels = data.map(item => item.YQ);
-    const values = data.map(item => item.Value);
+export async function createLineChart(log, data = null, args = null) {
+  if (data && args) {
+    m_data = data;
+    data = null;
+    m_args = args;
+    args=null;
+    console.log("Creating new chart from new data & args");
+  }
+  else if (data) {
+    m_data = data;
+    data = null;
+    console.log("Creating new chart from new data");
+  }
+  else if (args) {
+    m_args = args;
+    args = null;
+    console.log("Creating new chart from new args");
+  }
+
+ if (m_data && m_args) {
+    const labels = m_data.map(item => item.YQ);
+    const values = m_data.map(item => item.Value);
 
     const chartData = {
         labels: labels,
@@ -44,8 +55,8 @@ export async function createLineChart(log, data) {
         }]
     };
 
-    if (args.visualization.show_nat_val === true) {
-        const nat_values = data.map(item => item.nat_value);
+    if (m_args.visualization.show_nat_val === true) {
+        const nat_values = m_data.map(item => item.nat_value);
         chartData.datasets.push({
             label: 'National median',
             data: nat_values,
@@ -69,7 +80,7 @@ export async function createLineChart(log, data) {
     }
 
     const chart = new Chart(ctx, {
-      type: args.visualization.type,
+      type: m_args.visualization.type,
       data: chartData,
       options: {
         scales: {

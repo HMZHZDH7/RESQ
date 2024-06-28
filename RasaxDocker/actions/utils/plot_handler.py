@@ -43,7 +43,7 @@ class PlotHandler:
         compressed_content_decoded = base64.b64encode(compressed_content).decode("utf-8")
 
         payload = {"file_type": "args", "file_content": compressed_content_decoded}
-        logger.info(f"args sent by actions: {payload}")
+        #logger.info(f"args sent by actions: {payload}")
         return payload
 
     def edit_data(self, show_nat_value):
@@ -87,7 +87,7 @@ class PlotHandler:
         compressed_content_decoded = base64.b64encode(compressed_content).decode("utf-8")
 
         payload = {"file_type": "data", "file_content": compressed_content_decoded}
-        logger.info(f"data sent by actions: {payload}")
+        #logger.info(f"data sent by actions: {payload}")
         return payload
 
     def compare_to_past(self):
@@ -212,7 +212,7 @@ class PlotHandler:
         compressed_content_decoded = base64.b64encode(compressed_content).decode("utf-8")
 
         payload = {"file_type": "data", "file_content": compressed_content_decoded}
-        logger.info(f"data sent by actions: {payload}")
+        #logger.info(f"data sent by actions: {payload}")
         return payload
 
     def dysphagia_guideline(self):
@@ -251,7 +251,7 @@ class PlotHandler:
         compressed_content_decoded = base64.b64encode(compressed_content).decode("utf-8")
 
         payload = {"file_type": "data", "file_content": compressed_content_decoded}
-        logger.info(f"data sent by actions: {payload}")
+        #logger.info(f"data sent by actions: {payload}")
         return payload
 
     def guideline_anticoags(self):
@@ -306,5 +306,5 @@ class PlotHandler:
         compressed_content_decoded = base64.b64encode(compressed_content).decode("utf-8")
 
         payload = {"file_type": "data", "file_content": compressed_content_decoded}
-        logger.info(f"data sent by actions: {payload}")
+        #logger.info(f"data sent by actions: {payload}")
         return payload

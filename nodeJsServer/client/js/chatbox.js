@@ -54,33 +54,33 @@ export async function setupEventListeners() {
   });
   /*const plotTypeSelect = document.getElementById("plot-type-select");
   plotTypeSelect.addEventListener("change", (event) => {
-    plotType = event.target.value;
-  });*/
-  const trendLine = document.getElementById("trend-line");
-  trendLine.addEventListener("change", (event) => {
-    trendLineChecked = trendLine.checked;
-  });
-  const errorBar = document.getElementById("error-bar");
-  errorBar.addEventListener("change", (event) => {
-    errorBarChecked = errorBar.checked;
-  });
-  const nationalValues = document.getElementById("national-values");
-  nationalValues.addEventListener("change", (event) => {
-    nationalValuesChecked = nationalValues.checked;
-  });
+  plotType = event.target.value;
+});*/
+const trendLine = document.getElementById("trend-line");
+trendLine.addEventListener("change", (event) => {
+  trendLineChecked = trendLine.checked;
+});
+const errorBar = document.getElementById("error-bar");
+errorBar.addEventListener("change", (event) => {
+  errorBarChecked = errorBar.checked;
+});
+const nationalValues = document.getElementById("national-values");
+nationalValues.addEventListener("change", (event) => {
+  nationalValuesChecked = nationalValues.checked;
+});
 
-  const hospitalComparison = document.getElementById("hospital-select");
-  hospitalComparison.addEventListener("change", (event) => {
-    selectedHospitals = Array.from(hospitalComparison.options)
-      .filter(option => option.selected)
-      .map(option => option.value);
-    if (selectedHospitals.includes('None')) {
-      console.log("None selected");
-      selectedHospitals = ['None'];
-    } else {
-      console.log(selectedHospitals);
-    }
-  });
+const hospitalComparison = document.getElementById("hospital-select");
+hospitalComparison.addEventListener("change", (event) => {
+  selectedHospitals = Array.from(hospitalComparison.options)
+  .filter(option => option.selected)
+  .map(option => option.value);
+  if (selectedHospitals.includes('None')) {
+    console.log("None selected");
+    selectedHospitals = ['None'];
+  } else {
+    console.log(selectedHospitals);
+  }
+});
 }
 
 export function showImage(thumbnail) {
@@ -153,32 +153,39 @@ async function sendMessage() {
     chatContainer.appendChild(userMessageContainer);
     messageInput.value = "";
 
-    // Send message through WebSocket
-    let data = await sendMessageServer(message);
-    getMessage('Done, Creating chart with the received data ....');
-    for (let item of data) {
-        await createLineChart(false, item);
+    let responseData = await sendMessageServer(message);
+
+    if (responseData.data && responseData.args) {
+      getMessage('Received both data and args, Creating a new chart....');
+      await createLineChart(false, responseData.data, responseData.args);
+    } else if (responseData.data) {
+      getMessage('Received only data, Creating a new chart....');
+      await createLineChart(false, responseData.data, undefined);
+    } else if (responseData.args) {
+      getMessage('Received only args, Creating a new chart....');
+      await createLineChart(false, undefined, responseData.args);
+    } else {
+      getMessage('No data or args received.');
     }
-    getMessage("Done")
   }
 }
 
 //Bot message
 export function getMessage(message) {
-   const chatContainer = document.getElementById("chat");
-   const chatbotMessageContainer = document.createElement("div");
-   chatbotMessageContainer.classList.add("ca-message-container");
+  const chatContainer = document.getElementById("chat");
+  const chatbotMessageContainer = document.createElement("div");
+  chatbotMessageContainer.classList.add("ca-message-container");
 
-   const botMessage = document.createElement("p");
-   botMessage.classList.add("received-message");
-   botMessage.textContent = message;
+  const botMessage = document.createElement("p");
+  botMessage.classList.add("received-message");
+  botMessage.textContent = message;
 
-   const botMessengerID = document.createElement("p");
-   botMessengerID.classList.add("chatbot-id");
-   botMessengerID.textContent = "Chatbot:";
+  const botMessengerID = document.createElement("p");
+  botMessengerID.classList.add("chatbot-id");
+  botMessengerID.textContent = "Chatbot:";
 
-   chatbotMessageContainer.appendChild(botMessengerID);
-   chatbotMessageContainer.appendChild(botMessage);
+  chatbotMessageContainer.appendChild(botMessengerID);
+  chatbotMessageContainer.appendChild(botMessage);
 
-   chatContainer.appendChild(chatbotMessageContainer);
+  chatContainer.appendChild(chatbotMessageContainer);
 }
