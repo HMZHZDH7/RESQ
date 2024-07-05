@@ -4,46 +4,45 @@ const path = require('path');
 
 const RASA_URL = 'http://localhost:5005/webhooks/rest/webhook';
 
-function logInteraction(user_id, user_message, rasa_response) {
+//One file per client to solve concurrency problems
+function setupLogging(userId) {
   // Create logs directory if it doesn't exist
   const logsDir = path.join(__dirname, 'logs');
   if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir);
   }
 
-  const logFilePath = path.join(logsDir, `${user_id}.json`);
-  let logData = {};
-
-  // Read existing log file if it exists
-  if (fs.existsSync(logFilePath)) {
-    const rawData = fs.readFileSync(logFilePath);
-    logData = JSON.parse(rawData);
-  }
-
-  // Get the next log entry index
-  const logIndex = Object.keys(logData).length + 1;
-
-  // Append the new interaction
-  logData[logIndex] = {
-    user_message,
-    rasa_response
-  };
-
-  // Write the updated log back to the file
-  fs.writeFileSync(logFilePath, JSON.stringify(logData, null, 2));
+  //Create file and return handle
+  const logFilePath = path.join(logsDir, `${userId}.json`);
+  const fileHandle = fs.openSync(logFilePath, 'a');
+  return fileHandle;
 }
 
-function sendMessageToRasa(message, user_id) {
+//Need to call the setupLogging() before this for getting the filehandle
+function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, rasaResponse) {
+  // Create the log entry
+
+  const logEntry = {
+    user : {timestamp : userTimestamp, message : userMessage},
+    rasa : {timestamp : rasaTimestamp, response : rasaResponse}
+  };
+
+  // Append the new interaction
+  fs.appendFileSync(fileHandle, JSON.stringify(logEntry, null, 2) + ',\n');
+}
+
+//Request on Rasa and Parsing Message
+function sendMessageToRasa(message, userId) {
   return fetch(RASA_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ sender: user_id, message }),
+    body: JSON.stringify({ sender: userId, message }),
   })
   .then(response => response.json())
   .then(data => {
-    // Format the response
+    //For each element, pushing string message and args/data json
     const formattedResponse = { message: [], data: {} };
     data.forEach((item) => {
       if (item.text) {
@@ -53,9 +52,6 @@ function sendMessageToRasa(message, user_id) {
       }
     });
 
-    // Log the interaction
-    logInteraction(user_id, message, formattedResponse);
-
     return formattedResponse;
   })
   .catch(error => {
@@ -63,4 +59,4 @@ function sendMessageToRasa(message, user_id) {
   });
 }
 
-module.exports = { sendMessageToRasa };
+module.exports = { sendMessageToRasa, setupLogging, logInteraction };

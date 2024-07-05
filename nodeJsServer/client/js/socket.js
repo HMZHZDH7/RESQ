@@ -126,8 +126,7 @@ async function retrieveFileContent(fileContent) {
 window.onload = async () => {
   try {
     await connectWebSocket();
-    // Example usage: log = false, json_names = ["data", "args"]
-    await createInitalChart(false, ["data", "args"]);
+    await createInitalChart(["data", "args"]);
     setupEventListeners();
   } catch (error) {
     console.error('Error during initialization:', error);

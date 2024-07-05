@@ -7,12 +7,12 @@ var allChartsThatWeHaveSaved = [];
 var m_data;
 var m_args;
 
-export async function createInitalChart(log, json_names) {
+export async function createInitalChart(json_names) {
 
   try {
-    m_data = await fetchData(json_names[0]);
-    m_args = await fetchData(json_names[1]);
-    createLineChart(log, m_data, m_args);
+    let data = await fetchData(json_names[0]);
+    let args = await fetchData(json_names[1]);
+    createLineChart(data, args);
   }
   catch (error) {
   console.error('Error fetching data:', error);
@@ -20,23 +20,31 @@ export async function createInitalChart(log, json_names) {
 }
 
 // Function to create the line chart
-export async function createLineChart(log, data = null, args = null) {
+export async function createLineChart(data = null, args = null) {
   if (data && args) {
     m_data = data;
-    data = null;
     m_args = args;
-    args=null;
     console.log("Creating new chart from new data & args");
+    console.log("data :");
+    console.log(data);
+    console.log(m_data);
+    console.log("args :");
+    console.log(args);
+    console.log(m_args);
   }
   else if (data) {
     m_data = data;
-    data = null;
     console.log("Creating new chart from new data");
+    console.log("data :");
+    console.log(data);
+    console.log(m_data);
   }
   else if (args) {
     m_args = args;
-    args = null;
     console.log("Creating new chart from new args");
+    console.log("args :");
+    console.log(args);
+    console.log(m_args);
   }
 
  if (m_data && m_args) {
