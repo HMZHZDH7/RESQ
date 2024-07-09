@@ -5,6 +5,7 @@ const path = require('path');
 const RASA_URL = 'http://localhost:5005/webhooks/rest/webhook';
 
 //One file per client to solve concurrency problems
+// Function to setup logging for a user
 function setupLogging(userId) {
   // Create logs directory if it doesn't exist
   const logsDir = path.join(__dirname, 'logs');
@@ -12,23 +13,33 @@ function setupLogging(userId) {
     fs.mkdirSync(logsDir);
   }
 
-  //Create file and return handle
+  // Create file if it doesn't exist and initialize with an empty array
   const logFilePath = path.join(logsDir, `${userId}.json`);
-  const fileHandle = fs.openSync(logFilePath, 'a');
-  return fileHandle;
+  if (!fs.existsSync(logFilePath)) {
+    fs.writeFileSync(logFilePath, '[]');
+  }
+  return logFilePath;
 }
 
-//Need to call the setupLogging() before this for getting the filehandle
+// Synchronous logging function
 function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, rasaResponse) {
-  // Create the log entry
-
   const logEntry = {
-    user : {timestamp : userTimestamp, message : userMessage},
-    rasa : {timestamp : rasaTimestamp, response : rasaResponse}
+    user: { timestamp: userTimestamp, message: userMessage },
+    rasa: { timestamp: rasaTimestamp, response: rasaResponse }
   };
 
-  // Append the new interaction
-  fs.appendFileSync(fileHandle, JSON.stringify(logEntry, null, 2) + ',\n');
+  // Read the existing content of the file
+  const fileContent = fs.readFileSync(fileHandle, 'utf8');
+  let logArray;
+  try {
+    logArray = JSON.parse(fileContent);
+  } catch (error) {
+    logArray = [];
+  }
+
+  // Append the new log entry
+  logArray.push(logEntry);
+  fs.writeFileSync(fileHandle, JSON.stringify(logArray, null, 2));
 }
 
 //Request on Rasa and Parsing Message

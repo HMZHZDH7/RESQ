@@ -127,14 +127,39 @@ document.addEventListener("DOMContentLoaded", async function () {
     img.src = chartLibrary[i];
     galleryContainer.appendChild(img);
   }
-  await setupEventListeners();
 });
 
-//Set user message in the front and set it to the server
-async function sendMessage() {
+export async function sendMessage() {
   const messageInput = document.getElementById("input");
   const message = messageInput.value;
+  messageInput.value = "";
 
+  printUserMessage(message);
+  //Send the string into the nodejs server
+  try {
+    let responseData = await sendMessageServer(message);
+
+    //The message is show in the chatbox inside the call of get message into the sendMessageServer
+    //But the jsons should be displayed if received
+    if (responseData.data && responseData.args) {
+      printServerMessage('Received both data and args, Creating a new chart....');
+      await createLineChart(responseData.data, responseData.args);
+    } else if (responseData.data) {
+      printServerMessage('Received only data, Creating a new chart....');
+      await createLineChart(responseData.data, undefined);
+    } else if (responseData.args) {
+      printServerMessage('Received only args, Creating a new chart....');
+      await createLineChart(undefined, responseData.args);
+    } else {
+      printServerMessage('No data or args received.');
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+//Set user message in the front and set it to the server
+export async function printUserMessage(message) {
   if (message.trim() !== "") {
     const chatContainer = document.getElementById("chat");
     const userMessageContainer = document.createElement("div");
@@ -152,30 +177,11 @@ async function sendMessage() {
     userMessageContainer.appendChild(userMessage);
 
     chatContainer.appendChild(userMessageContainer);
-    messageInput.value = "";
-
-    //Send the string into the nodejs server
-    let responseData = await sendMessageServer(message);
-
-    //The message is show in the chatbox inside the call of get message into the sendMessageServer
-    //But the jsons should be displayed if received
-    if (responseData.data && responseData.args) {
-      getMessage('Received both data and args, Creating a new chart....');
-      await createLineChart(responseData.data, responseData.args);
-    } else if (responseData.data) {
-      getMessage('Received only data, Creating a new chart....');
-      await createLineChart(responseData.data, undefined);
-    } else if (responseData.args) {
-      getMessage('Received only args, Creating a new chart....');
-      await createLineChart(undefined, responseData.args);
-    } else {
-      getMessage('No data or args received.');
-    }
   }
 }
 
 //Set Bot message inside the chatbox
-export function getMessage(message) {
+export function printServerMessage(message) {
   const chatContainer = document.getElementById("chat");
   const chatbotMessageContainer = document.createElement("div");
   chatbotMessageContainer.classList.add("ca-message-container");
@@ -192,4 +198,9 @@ export function getMessage(message) {
   chatbotMessageContainer.appendChild(botMessage);
 
   chatContainer.appendChild(chatbotMessageContainer);
+}
+
+export function clearChatMessages() {
+  const chatContainer = document.getElementById("chat");
+  chatContainer.innerHTML = "";
 }

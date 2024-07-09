@@ -5,13 +5,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chatbox and Data Viz</title>
-  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="../css/style.css">
 </head>
 
 <body style="display: flex;">
   <!-- Chatbox container -->
   <main id="main-container">
     <div id="chat-container">
+      <div id="admin-container">
+        <select id="client-selector" title="Choose the client ..."></select>
+      </div>
       <div id="chat"></div>
       <div id="input-container">
         <input id="input" type="text" placeholder="Type a message...">
@@ -118,8 +121,8 @@
     </div>
   </main>
   <!-- Load the bundled vendor script -->
-  <script src="/dist/vendor.bundle.js"></script>
+  <script src="../dist/vendor.bundle.js"></script>
   <!-- Load your main module script -->
-  <script type="module" src="./js/client.js"></script>
+  <script type="module" src="../js/admin.js"></script>
 </body>
 </html>

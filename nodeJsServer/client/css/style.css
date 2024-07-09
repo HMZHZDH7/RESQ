@@ -287,17 +287,34 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0 10px;
   border-right: 1px solid black;
 }
 
+#admin-container {
+  height: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 10px 10px;
+  border-bottom: 1px solid black;
+}
+
+#client-selector {
+    width: 100%;
+    height: 2em;
+    border: 1px solid #ccc;
+    padding: 5px;
+    background-color: #fff;
+    align-items: center;
+  }
+
 #chat {
-  height: 100%;
+  height: auto;
   display: flex;
   flex-direction: column;
-  flex-shrink: 1;
+  flex-grow: 1;
   overflow-y: auto;
-  padding: 10px 0;
+  padding: 10px 10px 0;
 }
 
 #input-container {

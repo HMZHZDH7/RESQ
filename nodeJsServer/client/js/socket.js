@@ -1,30 +1,37 @@
-import { createLineChart, createInitalChart } from './viz.js';
-import { setupEventListeners, getMessage } from './chatbox.js';
+import { printUserMessage, printServerMessage } from './chatbox.js';
+import { updateClientList } from './admin.js';
 
 let ws;
 let pendingRequests = {};
 
-export function connectWebSocket() {
+export function connectWebSocket(isAdmin) {
   return new Promise((resolve, reject) => {
-    ws = new WebSocket('ws://localhost:3000');
+    ws = new WebSocket(`ws://localhost:3000?admin=${isAdmin}`);
+
     ws.onopen = () => {
-      console.log('Connected to the WebSocket server');
+      console.log(`Connected to the WebSocket server as ${isAdmin ? 'admin' : 'user'}`);
       resolve();
     };
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.requestId && pendingRequests[data.requestId]) {
+      //This cas is not a pending request cause it is first sent by the server so we need to manage it here
+      if (isAdmin && data.type === 'clientList') {
+        updateClientList(data.clients);
+      } else if (data.requestId && pendingRequests[data.requestId]) {
         pendingRequests[data.requestId](data);
         delete pendingRequests[data.requestId];
       } else {
-        let msg = data.message
+        let msg = data.message;
         console.log('Received:', msg);
-        getMessage(msg);
+        printServerMessage(msg);
       }
     };
+
     ws.onclose = () => {
       console.log('Disconnected from the WebSocket server');
     };
+
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
       reject(error);
@@ -32,27 +39,26 @@ export function connectWebSocket() {
   });
 }
 
-export function fetchData(json_name) {
+//Directory of the server and json name
+export function fetchData(dir, json_name) {
   return new Promise((resolve, reject) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       const requestId = Date.now().toString();
       pendingRequests[requestId] = (data) => {
         if (data.error) {
-          getMessage(`Error: ${data.message} for ${data.json_name}`);
+          printServerMessage(`Error: ${data.message} for ${data.json_name}`);
           reject(new Error(data.message));
         } else {
-          getMessage(`Received ${data.json_name}.json`);
           resolve(data.data);
         }
       };
-      ws.send(JSON.stringify({ action: 'fetchData', json_name, requestId }));
+      ws.send(JSON.stringify({ action: 'fetchData', dir, json_name, requestId }));
     } else {
       reject(new Error('WebSocket is not connected'));
     }
   });
 }
 
-// Function to send message to server and process the response
 export async function sendMessageServer(message) {
   return new Promise((resolve, reject) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -60,14 +66,14 @@ export async function sendMessageServer(message) {
       pendingRequests[requestId] = async (payload) => {
         try {
           if (payload.error) {
-            getMessage(`Error: ${payload.message}`);
+            printServerMessage(`Error: ${payload.message}`);
             reject(new Error(payload.message));
           } else {
             // Handle messages
             if (payload.message) {
               const messages = payload.message;
               Object.values(messages).forEach(msg => {
-                getMessage(msg);
+                printServerMessage(msg);
               });
             }
             if (payload.data) {
@@ -76,11 +82,11 @@ export async function sendMessageServer(message) {
               let jsons = payload.data;
 
               if (jsons.data) {
-                getMessage(`Received data, Decoding ...`);
+                printServerMessage(`Received data, Decoding ...`);
                 decompressedData['data'] = await retrieveFileContent(jsons.data.file_content);
               }
               if (jsons.args) {
-                getMessage(`Received args, Decoding ...`);
+                printServerMessage(`Received args, Decoding ...`);
                 decompressedData['args'] = await retrieveFileContent(jsons.args.file_content);
               }
 
@@ -121,14 +127,3 @@ async function retrieveFileContent(fileContent) {
 
   return JSON.parse(jsonString);
 }
-
-// Initialize WebSocket and call createLineChart after the connection is established
-window.onload = async () => {
-  try {
-    await connectWebSocket();
-    await createInitalChart(["data", "args"]);
-    setupEventListeners();
-  } catch (error) {
-    console.error('Error during initialization:', error);
-  }
-};
