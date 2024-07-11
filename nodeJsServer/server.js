@@ -50,6 +50,7 @@ app.get('/admin/', (req, res) => {
 
 let clients = [];
 let admins = [];
+
 // Handle WebSocket connections
 wss.on('connection', (ws, request) => {
   // Parse the URL to get the query parameters (Admin === 'true')
@@ -64,8 +65,16 @@ wss.on('connection', (ws, request) => {
     admins.push(ws);
     console.log(`New admin connected`);
 
-    // Send the current list of clients to the new admin
-    ws.send(JSON.stringify({ type: 'clientList', clients: clients.map(client => client.user_id) }));
+    // Send the current list of clients and users with logs to the new admin
+    const userLoggedList = rasaClient.getUserLoggedList();
+    const clientList = clients.map(client => client.user_id);
+    ws.send(JSON.stringify({
+      type: 'clientList',
+      clients: {
+        connectedList: clientList,
+        userLoggedList: userLoggedList
+      }
+    }));
   }
   //User logic
   else {
@@ -77,7 +86,14 @@ wss.on('connection', (ws, request) => {
     console.log(`New client connected with user_id: ${user_id}`);
 
     // Send updated client list to all admins
-    const clientListMessage = JSON.stringify({ type: 'clientList', clients: clients.map(client => client.user_id) });
+    const userLoggedList = rasaClient.getUserLoggedList();
+    const clientListMessage = JSON.stringify({
+      type: 'clientList',
+      clients: {
+        connectedList: clients.map(client => client.user_id),
+        userLoggedList: userLoggedList
+      }
+    });
     admins.forEach(admin => {
       if (admin.readyState === WebSocket.OPEN) { admin.send(clientListMessage); }
     });
@@ -93,17 +109,19 @@ wss.on('connection', (ws, request) => {
         const jsonData = fs.readFileSync(path.join(__dirname, 'server', parsedMessage.dir, `${parsedMessage.json_name}.json`));
         ws.send(JSON.stringify({
           requestId: parsedMessage.requestId,
-          error : false,
+          error: false,
           json_name: parsedMessage.json_name,
-          data: JSON.parse(jsonData) }));
+          data: JSON.parse(jsonData)
+        }));
       }
       catch (error) {
         console.error('Error reading JSON file:', error);
         ws.send(JSON.stringify({
           requestId: parsedMessage.requestId,
-          error : true,
+          error: true,
           json_name: parsedMessage.json_name,
-          message: 'Failed to read JSON file' }));
+          message: 'Failed to read JSON file'
+        }));
       }
     }
 
@@ -111,32 +129,32 @@ wss.on('connection', (ws, request) => {
     else if (parsedMessage.action === 'sendMessageToRasa') {
       let rasaTimestamp = null;
       let userTimestamp = new Date().toISOString();
-      console.log(`${user_id} asking : ${parsedMessage.message}`);
+      console.log(`${user_id} asking: ${parsedMessage.message}`);
 
       //Sending request to Rasa
       rasaClient.sendMessageToRasa(parsedMessage.message, user_id)
         .then(response => {
           //Cli log
           rasaTimestamp = new Date().toISOString();
-          console.log("Response from Rasa Server :");
+          console.log("Response from Rasa Server:");
           console.log(response);
 
           //Sending client
           ws.send(JSON.stringify({
             requestId: parsedMessage.requestId, //Client-based RequestID for synchronicity
-            error : false,
+            error: false,
             message: response.message,
             data: response.data
           }));
 
-          //Logging on the file handle : User msg and Rasa Response
-          rasaClient.logInteraction(logFileHandle, userTimestamp, parsedMessage.message, rasaTimestamp,  response);
+          //Logging on the file handle: User msg and Rasa Response
+          rasaClient.logInteraction(logFileHandle, userTimestamp, parsedMessage.message, rasaTimestamp, response);
         })
         .catch(error => {
           console.error('Error sending message to Rasa:', error);
           ws.send(JSON.stringify({
             requestId: parsedMessage.requestId,
-            error : true,
+            error: true,
             message: 'Failed to process message with Rasa',
           }));
         });
@@ -167,7 +185,14 @@ wss.on('connection', (ws, request) => {
       clients = clients.filter(client => client !== ws);
 
       // Send updated client list to all admins
-      const clientListMessage = JSON.stringify({ type: 'clientList', clients: clients.map(client => client.user_id) });
+      const userLoggedList = rasaClient.getUserLoggedList();
+      const clientListMessage = JSON.stringify({
+        type: 'clientList',
+        clients: {
+          connectedList: clients.map(client => client.user_id),
+          userLoggedList: userLoggedList
+        }
+      });
       admins.forEach(admin => {
         if (admin.readyState === WebSocket.OPEN) {
           admin.send(clientListMessage);

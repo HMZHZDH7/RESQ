@@ -84,6 +84,28 @@ textarea {
    Author's custom styles
    ========================================================================== */
 
+/* ======== COLOR ========= */
+
+select.green {
+  color: green;
+}
+
+select.red {
+  color: red;
+}
+
+select option.green {
+  color: green !important;
+}
+
+select option.red {
+  color: red !important;
+}
+
+select option {
+  color: blue; /* Fallback color */
+}
+
 /* ==========================================================================
    Helper classes
    ========================================================================== */

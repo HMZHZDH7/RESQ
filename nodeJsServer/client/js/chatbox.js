@@ -204,3 +204,8 @@ export function clearChatMessages() {
   const chatContainer = document.getElementById("chat");
   chatContainer.innerHTML = "";
 }
+
+function changeColor(elementId, colorClass) {
+  const element = document.getElementById(elementId);
+  element.className = colorClass;
+}

@@ -42,6 +42,16 @@ function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, r
   fs.writeFileSync(fileHandle, JSON.stringify(logArray, null, 2));
 }
 
+function getUserLoggedList() {
+  const logsDir = path.join(__dirname, 'logs');
+  if (!fs.existsSync(logsDir)) {
+    return [];
+  }
+
+  const files = fs.readdirSync(logsDir);
+  return files.map(file => path.basename(file, '.json'));
+}
+
 //Request on Rasa and Parsing Message
 function sendMessageToRasa(message, userId) {
   return fetch(RASA_URL, {
@@ -70,4 +80,4 @@ function sendMessageToRasa(message, userId) {
   });
 }
 
-module.exports = { sendMessageToRasa, setupLogging, logInteraction };
+module.exports = { sendMessageToRasa, setupLogging, logInteraction, getUserLoggedList };
