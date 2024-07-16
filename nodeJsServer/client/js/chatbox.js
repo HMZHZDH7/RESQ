@@ -1,4 +1,4 @@
-import { sendMessageServer, fetchData } from './socket.js';
+import { sendMessageServer, sendMessageToUser, fetchData } from './socket.js';
 import { createLineChart } from './viz.js';
 
 // WebSocket
@@ -26,15 +26,15 @@ const generateXAndYAxisDropdowns = () => {
   });
 };
 
-export async function setupEventListeners() {
+export async function setupEventListeners(admin) {
   const messageInput = document.getElementById("input");
+  const sendButton = document.getElementById("send");
   messageInput.addEventListener("keyup", (event) => {
     if (event.key === "Enter") {
-      sendMessage();
+      sendMessage(admin);
     }
   });
-  const sendButton = document.getElementById("send");
-  sendButton.onclick = sendMessage;
+  sendButton.onclick = () => {sendMessage(admin);};
   const menuButton = document.getElementById("pop-up-button");
   menuButton.onclick = openMenu;
   const thumbnails = document.getElementsByClassName("gallery-image");
@@ -129,37 +129,33 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 });
 
-export async function sendMessage() {
+export async function sendMessage(isAdmin) {
   const messageInput = document.getElementById("input");
   const message = messageInput.value;
   messageInput.value = "";
 
-  printUserMessage(message);
-  //Send the string into the nodejs server
-  try {
-    let responseData = await sendMessageServer(message);
-
-    //The message is show in the chatbox inside the call of get message into the sendMessageServer
-    //But the jsons should be displayed if received
-    if (responseData.data && responseData.args) {
-      printServerMessage('Received both data and args, Creating a new chart....');
-      await createLineChart(responseData.data, responseData.args);
-    } else if (responseData.data) {
-      printServerMessage('Received only data, Creating a new chart....');
-      await createLineChart(responseData.data, undefined);
-    } else if (responseData.args) {
-      printServerMessage('Received only args, Creating a new chart....');
-      await createLineChart(undefined, responseData.args);
-    } else {
-      printServerMessage('No data or args received.');
+  if (isAdmin) {
+    //Send the string into the selected client
+    try {
+      printServerMessage(message);
+      sendMessageToUser(message);
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error(error);
+  }
+  else {
+    //Send the string into the nodejs server
+    try {
+      printUserMessage(message);
+      sendMessageServer(message);
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
 
 //Set user message in the front and set it to the server
-export async function printUserMessage(message) {
+export function printUserMessage(message) {
   if (message.trim() !== "") {
     const chatContainer = document.getElementById("chat");
     const userMessageContainer = document.createElement("div");

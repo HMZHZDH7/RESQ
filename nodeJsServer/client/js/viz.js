@@ -7,17 +7,6 @@ var allChartsThatWeHaveSaved = [];
 var m_data;
 var m_args;
 
-export async function createInitalChart(json_names) {
-  try {
-    let data = await fetchData("data", json_names[0]);
-    let args = await fetchData("data", json_names[1]);
-    createLineChart(data, args);
-  }
-  catch (error) {
-  console.error('Error fetching data:', error);
-  }
-}
-
 // Function to create the line chart
 export async function createLineChart(data = null, args = null) {
   if (data && args) {

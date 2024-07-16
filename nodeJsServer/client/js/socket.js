@@ -1,5 +1,6 @@
 import { printUserMessage, printServerMessage } from './chatbox.js';
 import { updateClientList } from './admin.js';
+import { createLineChart } from './viz.js';
 
 let ws;
 let pendingRequests = {};
@@ -8,122 +9,157 @@ export function connectWebSocket(isAdmin) {
   return new Promise((resolve, reject) => {
     ws = new WebSocket(`ws://localhost:3000?admin=${isAdmin}`);
 
-    ws.onopen = () => {
-      console.log(`Connected to the WebSocket server as ${isAdmin ? 'admin' : 'user'}`);
-      resolve();
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      //This cas is not a pending request cause it is first sent by the server so we need to manage it here
-      if (isAdmin && data.type === 'clientList') {
-        updateClientList(data.clients);
-      } else if (data.requestId && pendingRequests[data.requestId]) {
-        pendingRequests[data.requestId](data);
-        delete pendingRequests[data.requestId];
-      } else {
-        let msg = data.message;
-        console.log('Received:', msg);
-        printServerMessage(msg);
-      }
-    };
-
-    ws.onclose = () => {
-      console.log('Disconnected from the WebSocket server');
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      reject(error);
-    };
-  });
-}
-
-//Directory of the server and json name
-export function fetchData(dir, json_name) {
-  return new Promise((resolve, reject) => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const requestId = Date.now().toString();
-      pendingRequests[requestId] = (data) => {
-        if (data.error) {
-          printServerMessage(`Error: ${data.message} for ${data.json_name}`);
-          reject(new Error(data.message));
-        } else {
-          resolve(data.data);
-        }
+      ws.onopen = () => {
+        console.log(`Connected to the WebSocket server as ${isAdmin ? 'admin' : 'user'}`);
+        resolve();
       };
-      ws.send(JSON.stringify({ action: 'fetchData', dir, json_name, requestId }));
-    } else {
-      reject(new Error('WebSocket is not connected'));
-    }
-  });
-}
 
-export async function sendMessageServer(message) {
-  return new Promise((resolve, reject) => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const requestId = Date.now().toString();
-      pendingRequests[requestId] = async (payload) => {
-        try {
-          if (payload.error) {
-            printServerMessage(`Error: ${payload.message}`);
-            reject(new Error(payload.message));
-          } else {
-            // Handle messages
-            if (payload.message) {
-              const messages = payload.message;
-              Object.values(messages).forEach(msg => {
-                printServerMessage(msg);
-              });
-            }
-            if (payload.data) {
-              // Handle data and args
-              let decompressedData = {};
-              let jsons = payload.data;
-
-              if (jsons.data) {
-                printServerMessage(`Received data, Decoding ...`);
-                decompressedData['data'] = await retrieveFileContent(jsons.data.file_content);
-              }
-              if (jsons.args) {
-                printServerMessage(`Received args, Decoding ...`);
-                decompressedData['args'] = await retrieveFileContent(jsons.args.file_content);
-              }
-
-              resolve(decompressedData);
-            }
-            else resolve([]);
-          }
-        } catch (error) {
-          reject(error);
-        }
+      ws.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
+        await handleIncommingMessage(data);
       };
-      ws.send(JSON.stringify({ action: 'sendMessageToRasa', message, requestId }));
-    } else {
-      reject(new Error('WebSocket is not connected'));
-    }
-  });
-}
 
-async function retrieveFileContent(fileContent) {
-  const base64ToUint8Array = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-  const compressedData = base64ToUint8Array(fileContent);
+      ws.onclose = () => {
+        console.log('Disconnected from the WebSocket server');
+      };
 
-  const decompressedStream = new DecompressionStream('gzip');
-  const decompressedWriter = decompressedStream.writable.getWriter();
-  decompressedWriter.write(compressedData);
-  decompressedWriter.close();
-
-  const stream = decompressedStream.readable.pipeThrough(new TextDecoderStream());
-
-  let jsonString = '';
-  const reader = stream.getReader();
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    jsonString += value;
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        reject(error);
+      };
+    });
   }
 
-  return JSON.parse(jsonString);
-}
+  async function handleIncommingMessage(message) {
+    //Handle potential errors
+    if (message.error) {
+      message.message.forEach((errorMsg) => {
+        printServerMessage(errorMsg.str);
+      });
+    }
+    else {
+      //Handle incomming message
+      console.log("Handling message");
+      console.log(message);
+      if (message.message) {
+        if (Array.isArray(message.message)) {
+          console.log(message.message);
+          message.message.forEach((entrie) => {
+            if (entrie.srv) { printServerMessage(entrie.str); }
+            else { printUserMessage(entrie.str); }
+          });
+        }
+        else {
+          if (message.message.srv) { printServerMessage(message.message.str); }
+          else { printUserMessage(message.message.str); }
+        }
+      }
+      //Handle incomming data
+      if (message.data) {
+        const json = message.data;
+        //Received compressed jsons
+        if (typeof json.data === 'string' && typeof json.args === 'string') {
+          printServerMessage('Received both data and args, Creating a new chart....');
+          const dataJson = await retrieveFileContent(json.data);
+          const argsJson = await retrieveFileContent(json.args);
+          createLineChart(dataJson, argsJson);
+        }
+        else if (typeof json.data === 'string') {
+          printServerMessage('Received only data, Creating a new chart....');
+          const dataJson = await retrieveFileContent(json.data);
+          createLineChart(dataJson, undefined);
+        }
+        else if (typeof json.args === 'string') {
+          printServerMessage('Received only args, Creating a new chart....');
+          const argsJson = await retrieveFileContent(json.args);
+          createLineChart(undefined, argsJson);
+        }
+        //Received clean jsons
+        else if (json.data !== null && json.args !== null) {
+          printServerMessage('Received both data and args, Creating a new chart....');
+          createLineChart(json.data, json.args);
+        }
+        else {console.error("Received empty data field");}
+      }
+      if (message.clients) {
+        updateClientList(message.clients);
+      }
+    }
+  }
+
+  // Fetch one or multiple jsons
+  export function fetchData(json_name) {
+    try {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: 'fetchData', json_name}));
+      } else {
+        throw new Error('WebSocket is not connected');
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Directory of the server and json name
+  export function fetchUser(json_name) {
+    try {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: 'fetchUser', json_name}));
+      } else {
+        throw new Error('WebSocket is not connected');
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Function to send a message to the server
+  export function sendMessageServer(message) {
+    try {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: 'sendMessageToRasa', message }));
+      } else {
+        throw new Error('WebSocket is not connected');
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
+  // Function to send a message to the selected user via the server
+  export function sendMessageToUser(message) {
+    try {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: 'sendMessageToUser', message }));
+      } else {
+        throw new Error('WebSocket is not connected');
+      }
+    } catch (error) {
+      console.error('Error sending message to user:', error.message);
+      throw error;
+    }
+  }
+
+  async function retrieveFileContent(fileContent) {
+    const base64ToUint8Array = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const compressedData = base64ToUint8Array(fileContent);
+
+    const decompressedStream = new DecompressionStream('gzip');
+    const decompressedWriter = decompressedStream.writable.getWriter();
+    decompressedWriter.write(compressedData);
+    decompressedWriter.close();
+
+    const stream = decompressedStream.readable.pipeThrough(new TextDecoderStream());
+
+    let jsonString = '';
+    const reader = stream.getReader();
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      jsonString += value;
+    }
+
+    return JSON.parse(jsonString);
+  }

@@ -345,6 +345,7 @@ body {
   display: flex;
   align-items: center;
   padding: 8px;
+  background-color: #f0f0f0; /* Default background color */
 }
 
 #input {
@@ -354,6 +355,18 @@ body {
   outline: none;
   width: 100%;
   overflow-wrap: break-word;
+  padding: 8px; /* Add padding to input */
+}
+
+/* Disabled input */
+#input:disabled {
+  background-color: #333; /* Dark gray background when disabled */
+  color: #ccc; /* Light gray text when disabled */
+  -webkit-text-fill-color: #ccc; /* Light gray text for webkit browsers */
+}
+
+#input-container.disabled {
+  background-color: #333; /* Dark gray background when disabled */
 }
 
 #send {
@@ -363,13 +376,11 @@ body {
   font: inherit;
   cursor: pointer;
   outline: inherit;
-
   min-width: 50px;
   min-height: 46px;
   background: #FDE1E8;
   border-radius: 8px;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-
 }
 
 #send:hover {
@@ -381,6 +392,17 @@ body {
 #send>svg {
   width: 46px;
 }
+
+/* Disabled button */
+#send:disabled {
+  background: #333; /* Dark gray background when disabled */
+  cursor: not-allowed;
+}
+
+#send:disabled>svg {
+  stroke: #ccc; /* Light gray stroke for the SVG when disabled */
+}
+
 
 .message-container {
   display: flex;
