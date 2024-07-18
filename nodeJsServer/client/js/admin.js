@@ -39,33 +39,11 @@ export function updateClientList(clients) {
 
   // Set the selector to the default option
   clientSelector.value = '';
-
-  // Add event listener for selection change
-  clientSelector.addEventListener('change', (event) => {
-    const selectedValue = event.target.value;
-    const selectedOption = event.target.options[event.target.selectedIndex];
-
-    // Manage state if connected or not
-    clientSelector.classList.remove('green', 'red');
-    if (selectedOption.classList.contains('green')) {
-      clientSelector.classList.add('green');
-      toggleInputAndButton(true);
-    } else if (selectedOption.classList.contains('red')) {
-      clientSelector.classList.add('red');
-      toggleInputAndButton(false);
-    } else {
-      toggleInputAndButton(false);
-    }
-
-    if (selectedValue) {
-      handleClientSelection(selectedValue);
-    }
-  });
 }
 
 
 // Example function to handle client selection
-async function handleClientSelection(selectedUser) {
+export async function handleClientSelection(selectedUser) {
   try {
     console.log('Selected client:', selectedUser);
     clearChatMessages();
@@ -75,7 +53,7 @@ async function handleClientSelection(selectedUser) {
   }
 }
 
-function toggleInputAndButton(isEnabled) {
+export function toggleInputAndButton(isEnabled) {
   const messageInput = document.getElementById("input");
   const sendButton = document.getElementById("send");
   const inputContainer = document.getElementById("input-container");

@@ -16,7 +16,7 @@ export function connectWebSocket(isAdmin) {
 
       ws.onmessage = async (event) => {
         const data = JSON.parse(event.data);
-        await handleIncommingMessage(data);
+        await handleIncommingMessage(data, isAdmin);
       };
 
       ws.onclose = () => {
@@ -30,7 +30,7 @@ export function connectWebSocket(isAdmin) {
     });
   }
 
-  async function handleIncommingMessage(message) {
+  async function handleIncommingMessage(message, admin) {
     //Handle potential errors
     if (message.error) {
       message.message.forEach((errorMsg) => {
@@ -42,18 +42,19 @@ export function connectWebSocket(isAdmin) {
       console.log("Handling message");
       console.log(message);
       if (message.message) {
-        if (Array.isArray(message.message)) {
-          console.log(message.message);
-          message.message.forEach((entrie) => {
-            if (entrie.srv) { printServerMessage(entrie.str); }
-            else { printUserMessage(entrie.str); }
+          //Make single entries into array to be processed by forEach
+          const messages = Array.isArray(message.message) ? message.message : [message.message];
+
+          //Make printFunction functor
+          //If admin print user message into server and opposite for user
+          messages.forEach(entrie => {
+            const printFunction = admin
+              ? (entrie.srv ? printUserMessage : printServerMessage)
+              : (entrie.srv ? printServerMessage : printUserMessage);
+
+            printFunction(entrie.str);
           });
         }
-        else {
-          if (message.message.srv) { printServerMessage(message.message.str); }
-          else { printUserMessage(message.message.str); }
-        }
-      }
       //Handle incomming data
       if (message.data) {
         const json = message.data;

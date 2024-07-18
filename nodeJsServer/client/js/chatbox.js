@@ -1,5 +1,6 @@
 import { sendMessageServer, sendMessageToUser, fetchData } from './socket.js';
 import { createLineChart } from './viz.js';
+import { handleClientSelection, toggleInputAndButton } from './admin.js';
 
 // WebSocket
 let xy = {};
@@ -52,35 +53,59 @@ export async function setupEventListeners(admin) {
   xAxisSelect.addEventListener("change", (event) => {
     xAxis = event.target.value;
   });
-  /*const plotTypeSelect = document.getElementById("plot-type-select");
-  plotTypeSelect.addEventListener("change", (event) => {
-  plotType = event.target.value;
-});*/
-const trendLine = document.getElementById("trend-line");
-trendLine.addEventListener("change", (event) => {
-  trendLineChecked = trendLine.checked;
-});
-const errorBar = document.getElementById("error-bar");
-errorBar.addEventListener("change", (event) => {
-  errorBarChecked = errorBar.checked;
-});
-const nationalValues = document.getElementById("national-values");
-nationalValues.addEventListener("change", (event) => {
-  nationalValuesChecked = nationalValues.checked;
-});
+  const trendLine = document.getElementById("trend-line");
+  trendLine.addEventListener("change", (event) => {
+    trendLineChecked = trendLine.checked;
+  });
+  const errorBar = document.getElementById("error-bar");
+  errorBar.addEventListener("change", (event) => {
+    errorBarChecked = errorBar.checked;
+  });
+  const nationalValues = document.getElementById("national-values");
+  nationalValues.addEventListener("change", (event) => {
+    nationalValuesChecked = nationalValues.checked;
+  });
 
-const hospitalComparison = document.getElementById("hospital-select");
-hospitalComparison.addEventListener("change", (event) => {
-  selectedHospitals = Array.from(hospitalComparison.options)
-  .filter(option => option.selected)
-  .map(option => option.value);
-  if (selectedHospitals.includes('None')) {
-    console.log("None selected");
-    selectedHospitals = ['None'];
-  } else {
-    console.log(selectedHospitals);
+  const hospitalComparison = document.getElementById("hospital-select");
+  hospitalComparison.addEventListener("change", (event) => {
+    selectedHospitals = Array.from(hospitalComparison.options)
+    .filter(option => option.selected)
+    .map(option => option.value);
+    if (selectedHospitals.includes('None')) {
+      console.log("None selected");
+      selectedHospitals = ['None'];
+    } else {
+      console.log(selectedHospitals);
+    }
+  });
+
+  //Add the event for the client selector if admin
+  if (admin) {
+    const clientSelector = document.getElementById('client-selector');
+    clientSelector.addEventListener('change', (event) => {
+      const selectedValue = event.target.value;
+      const selectedOption = event.target.options[event.target.selectedIndex];
+
+      // Manage state if connected or not
+      clientSelector.classList.remove('green', 'red');
+      if (selectedOption.classList.contains('green')) {
+        clientSelector.classList.add('green');
+        toggleInputAndButton(true);
+      } else if (selectedOption.classList.contains('red')) {
+        clientSelector.classList.add('red');
+        toggleInputAndButton(false);
+      } else {
+        toggleInputAndButton(false);
+      }
+
+      if (selectedValue) {
+        handleClientSelection(selectedValue);
+      }
+      else {
+        clearChatMessages();
+      }
+    });
   }
-});
 }
 
 export function showImage(thumbnail) {

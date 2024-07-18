@@ -140,6 +140,7 @@ wss.on('connection', (ws, request) => {
       let userTimestamp = new Date().toISOString();
       console.log(`${ws.user_id} asking: ${parsedMessage.message}`);
 
+
       //Sending request to Rasa
       rasaClient.sendMessageToRasa(parsedMessage.message, ws.user_id)
       .then(response => {
@@ -156,79 +157,93 @@ wss.on('connection', (ws, request) => {
             args : response.data?.args?.file_content }
           }));
 
-          //Logging on the file handle: User msg and Rasa Response
-          rasaClient.logInteraction(ws.logFileHandle, userTimestamp, parsedMessage.message, rasaTimestamp, response);
-        })
-        .catch(error => {
-          console.error('Error sending message to Rasa:', error);
-          ws.send(JSON.stringify({
-            error: true,
-            message: [{ str:'Failed to process message with Rasa', srv : true }]
-          }));
-        });
-      }
-      else if (parsedMessage.action === 'sendMessageToUser') {
-        try {
-          // Find the selected user into the list of active socket
-          if (ws.selectedUser) {
-            const selectedClient = clients.find(client => client.user_id === ws.selectedUser);
-            if (selectedClient) {
-              selectedClient.send(JSON.stringify({
-                error: false,
-                message: [{ str: parsedMessage.message, srv: true }]
-              }));
-              rasaClient.logSingleEntry(selectedClient.logFileHandle, parsedMessage.message, true);
-            } else {
-              throw new Error("Couldn't find selected user");
+          //Sending it into the admin watching the clients
+          const watchingAdmin = admins.find(admin => admin.selectedUser === ws.user_id);
+          if (watchingAdmin) {
+            // Create a new array with parsedMessage at the start
+            const combinedMessages = [{str:parsedMessage.message,srv:false}, ...response.message];
+
+            watchingAdmin.send(JSON.stringify({
+              error:false,
+              message: combinedMessages,
+              data: { data : response.data?.data?.file_content,
+                args : response.data?.args?.file_content }
+              }))
             }
-          } else {
-            throw new Error("Couldn't send message to user without any selected");
-          }
-        } catch (error) {
-          console.error('Error processing sendMessageToUser:', error.message);
-          ws.send(JSON.stringify({
-            error: true,
-            message: [{ str: error.message, srv: true }]
-          }));
+
+            //Logging on the file handle: User msg and Rasa Response
+            rasaClient.logInteraction(ws.logFileHandle, userTimestamp, parsedMessage.message, rasaTimestamp, response);
+          })
+          .catch(error => {
+            console.error('Error sending message to Rasa:', error);
+            ws.send(JSON.stringify({
+              error: true,
+              message: [{ str:'Failed to process message with Rasa', srv : true }]
+            }));
+          });
         }
-      } else {
-        console.log(`Received unsupported message : ${message}`);
-      }
+        else if (parsedMessage.action === 'sendMessageToUser') {
+          try {
+            // Find the selected user into the list of active socket
+            if (ws.selectedUser) {
+              const selectedClient = clients.find(client => client.user_id === ws.selectedUser);
+              if (selectedClient) {
+                selectedClient.send(JSON.stringify({
+                  error: false,
+                  message: [{ str: parsedMessage.message, srv: true }]
+                }));
+                rasaClient.logSingleEntry(selectedClient.logFileHandle, parsedMessage.message, true);
+              } else {
+                throw new Error("Couldn't find selected user");
+              }
+            } else {
+              throw new Error("Couldn't send message to user without any selected");
+            }
+          } catch (error) {
+            console.error('Error processing sendMessageToUser:', error.message);
+            ws.send(JSON.stringify({
+              error: true,
+              message: [{ str: error.message, srv: true }]
+            }));
+          }
+        } else {
+          console.log(`Received unsupported message : ${message}`);
+        }
+      });
+
+      //Welcome Message
+      ws.send(JSON.stringify({ message: {str :'Hello from server', srv : true }}));
+
+      ws.on('close', () => {
+        if (query.admin === 'true') {
+          console.log('Admin disconnected');
+          admins = admins.filter(admin => admin !== ws);
+        } else {
+          console.log(`Client disconnected ${ws.user_id}`);
+          clients = clients.filter(client => client !== ws);
+
+          // Send updated client list to all admins
+          const userLoggedList = rasaClient.getUserLoggedList();
+          const clientListMessage = JSON.stringify({
+            clients: {
+              connectedList: clients.map(client => client.user_id),
+              userLoggedList: userLoggedList
+            }
+          });
+          admins.forEach(admin => {
+            if (admin.readyState === WebSocket.OPEN) {
+              admin.send(clientListMessage);
+            }
+          });
+        }
+      });
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
     });
 
-    //Welcome Message
-    ws.send(JSON.stringify({ message: {str :'Hello from server', srv : true }}));
-
-    ws.on('close', () => {
-      if (query.admin === 'true') {
-        console.log('Admin disconnected');
-        admins = admins.filter(admin => admin !== ws);
-      } else {
-        console.log(`Client disconnected ${ws.user_id}`);
-        clients = clients.filter(client => client !== ws);
-
-        // Send updated client list to all admins
-        const userLoggedList = rasaClient.getUserLoggedList();
-        const clientListMessage = JSON.stringify({
-          clients: {
-            connectedList: clients.map(client => client.user_id),
-            userLoggedList: userLoggedList
-          }
-        });
-        admins.forEach(admin => {
-          if (admin.readyState === WebSocket.OPEN) {
-            admin.send(clientListMessage);
-          }
-        });
-      }
+    // Start the server
+    server.listen(3000, () => {
+      console.log('Server is listening on port 3000');
     });
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-  });
-
-  // Start the server
-  server.listen(3000, () => {
-    console.log('Server is listening on port 3000');
-  });

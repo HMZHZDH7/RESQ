@@ -21,7 +21,6 @@ function setupLogging(userId) {
   return logFilePath;
 }
 
-// Synchronous logging function
 function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, rasaResponse) {
   const logEntries = [];
 
@@ -33,7 +32,16 @@ function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, r
     logEntries.push({ timestamp: rasaTimestamp, message: { str: response.str, srv: response.srv } });
   });
 
-  // Read the existing content of the file and parse it and att the last entrie
+  // Log the data if present
+  if (rasaResponse.data) {
+    logEntries.push({
+      timestamp: rasaTimestamp,
+      data: { data: rasaResponse.data?.data?.file_content,
+        args: rasaResponse.data?.args?.file_content }
+    });
+  }
+
+  // Read the existing content of the file and parse it
   let logArray;
   try {
     const fileContent = fs.readFileSync(fileHandle, 'utf8');
@@ -41,9 +49,9 @@ function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, r
   } catch (error) {
     logArray = [];
   }
-  logArray = logArray.concat(logEntries);
 
-  // Write the updated log array back to the file
+  // Append the new log entries and write it
+  logArray = logArray.concat(logEntries);
   fs.writeFileSync(fileHandle, JSON.stringify(logArray, null, 2));
 }
 
@@ -82,8 +90,26 @@ function getUserLoggedList() {
 }
 
 function parseLogsToSend(logs) {
-  return { message: logs.map(log => log.message) };
+  const messageLogs = logs.filter(log => log.message !== undefined).map(log => log.message);
+
+  const dataMap = logs.reduce((acc, log) => {
+    if (log.data) {
+      if (log.data.data !== undefined) {
+        acc.data = log.data.data;
+      }
+      if (log.data.args !== undefined) {
+        acc.args = log.data.args;
+      }
+    }
+    return acc;
+  }, { data: null, args: null });
+
+  return {
+    message: messageLogs,
+    data: dataMap
+  };
 }
+
 
 //Request on Rasa and Parsing Message
 function sendMessageToRasa(message, userId) {
