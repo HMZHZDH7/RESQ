@@ -131,6 +131,28 @@ class ActionInitialise(Action):
         logger.info({"data": data, "args": args})
         return []
 
+#2024-07-23 09:44:05 ERROR    rasa_sdk.endpoint  - Exception occurred during execution of request <Request: POST /webhook>
+#File "/app/actions/actions.py", line 143, in run
+#  p_value, cohens_d, no_2022_q2_data = PLOT_HANDLER.compare_to_past()
+#File "/app/actions/utils/plot_handler.py", line 113, in compare_to_past
+#  mean_diff = q2_data.mean() - q1_data.mean()
+#File "/opt/venv/lib/python3.10/site-packages/pandas/core/series.py", line 6549, in mean
+#  return NDFrame.mean(self, axis, skipna, numeric_only, **kwargs)
+#File "/opt/venv/lib/python3.10/site-packages/pandas/core/generic.py", line 12420, in mean
+#  return self._stat_function(
+#File "/opt/venv/lib/python3.10/site-packages/pandas/core/generic.py", line 12377, in _stat_function
+#  return self._reduce(
+#File "/opt/venv/lib/python3.10/site-packages/pandas/core/series.py", line 6457, in _reduce
+#  return op(delegate, skipna=skipna, **kwds)
+#File "/opt/venv/lib/python3.10/site-packages/pandas/core/nanops.py", line 147, in f
+#  result = alt(values, axis=axis, skipna=skipna, **kwds)
+#File "/opt/venv/lib/python3.10/site-packages/pandas/core/nanops.py", line 404, in new_func
+#  result = func(values, axis=axis, skipna=skipna, mask=mask, **kwargs)
+#File "/opt/venv/lib/python3.10/site-packages/pandas/core/nanops.py", line 719, in nanmean
+#  the_sum = values.sum(axis, dtype=dtype_sum)
+#File "/opt/venv/lib/python3.10/site-packages/numpy/core/_methods.py", line 48, in _sum
+#  return umr_sum(a, axis, dtype, out, keepdims, initial, where)
+#TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
 class ActionVariableTTest(Action):
     def name(self) -> Text:
@@ -271,4 +293,38 @@ class ActionAnticoagsGuideline(Action):
         dispatcher.utter_message("Again, your hospital provides the correct medication to many patients but does not meet the guideline of 90% except for the most recent quarter.")
         dispatcher.utter_message("This is the last of the guidelines, let me know if you would like to explore something else.")
 
+        return []
+
+
+class ActionDefaultFallback(Action):
+
+    def name(self) -> Text:
+        return "action_default_fallback"
+
+    async def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        # Set a slot to indicate fallback without sending a message
+        return [SlotSet("fallback_triggered", True)]
+        
+
+class ActionAdmin(Action):
+
+    def name(self) -> Text:
+        return "action_admin"
+
+    async def run(
+        self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any],
+    ) -> List:
+
+        # Log tracker attributes
+        logger.info(f"Sender ID: {tracker.sender_id}")
+        logger.info(f"Slots: {tracker.slots}")
+        logger.info(f"Latest Message: {tracker.latest_message}")
+        logger.info(f"Events: {tracker.events}")
+        logger.info(f"Active Loop: {tracker.active_loop}")
+        logger.info(f"Latest Action Name: {tracker.latest_action_name}")
+
+        # Send a response message
+        dispatcher.utter_message(text="ActionAdmin has been triggered!")
+
+        # Return an empty list to signify no modification to the conversation state
         return []

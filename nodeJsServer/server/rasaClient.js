@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const RASA_URL = 'http://localhost:5005/webhooks/rest/webhook';
+const ACTION_URL = 'http://localhost:5055/webhook';
 
 //One file per client to solve concurrency problems
 // Function to setup logging for a user
@@ -140,4 +141,82 @@ function sendMessageToRasa(message, userId) {
   });
 }
 
-module.exports = { sendMessageToRasa, setupLogging, logInteraction, logSingleEntry, getUserLoggedList, parseLogsToSend };
+function parseCommand(command) {
+    const parts = command.trim().split(/\s+/);
+    if (parts.length < 1) {
+        throw new Error('Invalid command format');
+    }
+
+    const action = parts[0];
+    const slots = {};
+    for (let i = 1; i < parts.length; i += 2) {
+        const slotName = parts[i].replace('--', '');
+        const slotValue = parts[i + 1];
+        if (!slotName || !slotValue) {
+            throw new Error('Invalid slot format');
+        }
+        slots[slotName] = slotValue;
+    }
+    
+    return { action, slots };
+}
+
+
+
+function triggerAction(nextAction, slot) {
+  const payload = {
+    next_action: nextAction,
+    tracker: {
+      sender_id: "test_user",
+      slots: slot,
+      latest_message: {
+        text: "blblblblb",
+        intent: {
+          name: "admin",
+          confidence: 0.99
+        },
+        entities: []
+      },
+      paused: false,
+      events: [],
+      active_loop: null,
+      latest_action_name: null
+    },
+    domain: {
+      intents: ["admin"],
+      entities: [],
+      slots: {},
+      responses: {},
+      actions: [nextAction]
+    }
+  };
+
+  return fetch(ACTION_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`Server responded with status ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log(`Action ${nextAction} triggered successfully.`);
+    return data;
+  })
+  .catch(error => {
+    console.error(`Failed to trigger action ${nextAction}:`, error);
+    throw new Error(`Failed to trigger action: ${error.message}`);
+  });
+}
+
+// Example usage:
+// triggerAction("action_admin", {})
+//     .then(response => console.log(response))
+//     .catch(error => console.error(error));
+
+module.exports = { sendMessageToRasa, parseCommand, triggerAction, setupLogging, logInteraction, logSingleEntry, getUserLoggedList, parseLogsToSend };

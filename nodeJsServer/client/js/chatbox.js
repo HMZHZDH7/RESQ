@@ -44,7 +44,7 @@ export async function setupEventListeners(admin) {
       showImage(thumbnails[i]);
     });
   }
-
+/*
   const yAxisSelect = document.getElementById("y-axis-select");
   yAxisSelect.addEventListener("change", (event) => {
     yAxis = event.target.value;
@@ -78,7 +78,7 @@ export async function setupEventListeners(admin) {
       console.log(selectedHospitals);
     }
   });
-
+*/
   //Add the event for the client selector if admin
   if (admin) {
     const clientSelector = document.getElementById('client-selector');
@@ -162,7 +162,7 @@ export async function sendMessage(isAdmin) {
   if (isAdmin) {
     //Send the string into the selected client
     try {
-      printServerMessage(message);
+      printUserMessage(message);
       sendMessageToUser(message);
     } catch (error) {
       console.error(error);

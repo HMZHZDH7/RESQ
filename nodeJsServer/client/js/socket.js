@@ -1,5 +1,5 @@
 import { printUserMessage, printServerMessage } from './chatbox.js';
-import { updateClientList } from './admin.js';
+import { updateClientList, printUserCommand, printServerCommand } from './admin.js';
 import { createLineChart } from './viz.js';
 
 let ws;
@@ -42,19 +42,20 @@ export function connectWebSocket(isAdmin) {
       console.log("Handling message");
       console.log(message);
       if (message.message) {
-          //Make single entries into array to be processed by forEach
-          const messages = Array.isArray(message.message) ? message.message : [message.message];
+        //Make single entries into array to be processed by forEach
+        const messages = Array.isArray(message.message) ? message.message : [message.message];
 
-          //Make printFunction functor
-          //If admin print user message into server and opposite for user
-          messages.forEach(entrie => {
-            const printFunction = admin
-              ? (entrie.srv ? printUserMessage : printServerMessage)
-              : (entrie.srv ? printServerMessage : printUserMessage);
+        //Make printFunction functor
+        //If admin print user message into server and opposite for user
+        //set pintFunction either printServerMessage or printUserMessage
+        messages.forEach(entrie => {
+          const printFunction = admin
+          ? (entrie.srv ? printUserMessage : printServerMessage)
+          : (entrie.srv ? printServerMessage : printUserMessage);
 
-            printFunction(entrie.str);
-          });
-        }
+          printFunction(entrie.str);
+        });
+      }
       //Handle incomming data
       if (message.data) {
         const json = message.data;
@@ -84,6 +85,9 @@ export function connectWebSocket(isAdmin) {
       }
       if (message.clients) {
         updateClientList(message.clients);
+      }
+      if (message.promptMsg) {
+        printServerCommand(message.promptMsg.str, message.promptMsg.error);
       }
     }
   }
@@ -163,4 +167,20 @@ export function connectWebSocket(isAdmin) {
     }
 
     return JSON.parse(jsonString);
+  }
+
+  export function sendAdminActionRequests(command) {
+    try {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          action: 'admin',
+          command: command
+        }));
+      } else {
+        throw new Error('WebSocket is not connected');
+      }
+    } catch (error) {
+      console.error('Error sending admin action requests:', error.message);
+      throw error;
+    }
   }

@@ -206,10 +206,56 @@ wss.on('connection', (ws, request) => {
               message: [{ str: error.message, srv: true }]
             }));
           }
-        } else {
-          console.log(`Received unsupported message : ${message}`);
         }
-      });
+        else if (parsedMessage.action === 'admin') {
+          console.log(`Received command from admin: ${parsedMessage.command}`);
+
+          if (parsedMessage.command === "help") {
+            ws.send(JSON.stringify({
+              promptMsg: {
+                str: "action --slot1 val1 --slot2 val2",
+                error: false,
+              }
+            }));
+          } else {
+            try {
+              // Parse the command into a single action with slots
+              const parsedCommand = rasaClient.parseCommand(parsedMessage.command);
+              // Extract the action and slots
+              const { action, slots } = parsedCommand;
+
+              // Trigger the SDK action with the parsed slots
+              rasaClient.triggerAction(action, slots)
+              .then(response => {
+                console.log(`Action ${action} executed successfully:`, response);
+                ws.send(JSON.stringify({
+                  promptMsg: {
+                    str: `Action ${action} executed successfully.`,
+                    error: false,
+                  }
+                }));
+              })
+              .catch(error => {
+                console.error(`Error executing action ${action}:`, error);
+                ws.send(JSON.stringify({
+                  promptMsg: {
+                    str: `Error executing action ${action}: ${error.message}`,
+                    error: true,
+                  }
+                }));
+              });
+            } catch (error) {
+              console.error(`Error parsing command:`, error);
+              ws.send(JSON.stringify({
+                promptMsg: {
+                  str: `Can't parse your command: ${error.message}`,
+                  error: true,
+                }
+              }));
+            }
+          }
+        } //admin
+      }); //onmessage
 
       //Welcome Message
       ws.send(JSON.stringify({ message: {str :'Hello from server', srv : true }}));

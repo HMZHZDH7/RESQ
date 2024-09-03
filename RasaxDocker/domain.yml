@@ -50,6 +50,14 @@ slots:
       - type: from_entity
         entity: real_diff
 
+  fallback_triggered:
+    type: bool
+    initial_value: false
+    mappings:
+      - type: from_intent
+        value: true
+        intent: nlu_fallback
+
 forms:
   create_plot_form:
     required_slots:
@@ -113,6 +121,7 @@ actions:
 - utter_ask_causes_or_guidelines
 - action_dysphagia_guideline
 - action_anticoag_guideline
+- action_default_fallback
 
 session_config:
   session_expiration_time: 60

@@ -16,6 +16,12 @@ nlu:
     - goodmorning
     - goodevening
     - good afternoon
+#    - [hey](hey{2,})
+#    - [heyy](hey{2,})
+#    - [hi](hi{2,})
+#    - [hii](hi{2,})
+#    - [hello](hello{2,})
+#    - [helloo](hello{2,})
 
 - intent: both
   examples: |
@@ -31,6 +37,10 @@ nlu:
     - Give me both options
     - Can you provide me with both?
     - I'm interested in both.
+#    - [both](both{2,})
+#    - [bothh](both{2,})
+#    - [all](all{2,})
+#    - [alll](all{2,})
 
 - intent: goodbye
   examples: |
@@ -44,6 +54,10 @@ nlu:
     - see you around
     - bye bye
     - see you later
+#    - [bye](bye{2,})
+#    - [byee](bye{2,})
+#    - [goodbye](goodbye{2,})
+#    - [goodbyee](goodbye{2,})
 
 - intent: affirm
   examples: |
@@ -56,6 +70,12 @@ nlu:
     - sure
     - yes please
     - do it
+#    - [yes](yes{2,})
+#    - [yess](yes{2,})
+#    - [y](y{2,})
+#    - [yy](y{2,})
+#    - [sure](sure{2,})
+#    - [suree](sure{2,})
 
 - intent: reject
   examples: |
@@ -64,6 +84,12 @@ nlu:
     - no way
     - not really
     - dont
+#    - [no](no{2,})
+#    - [noo](no{2,})
+#    - [never](never{2,})
+#    - [neverr](never{2,})
+#    - [dont](dont{2,})
+#    - [dontt](dont{2,})
 
 - intent: intent_create_plot
   examples: |
@@ -85,18 +111,18 @@ nlu:
     - Show me a [line](plot_type) plot of [three_m_mrs](selected_value).
     - Plot a [bar](plot_type) chart for [QI](selected_value).
     - Give me a [line](plot_type) graph for [Value](selected_value)
-    - I want to create a [bar](plot_type) chart based on [imaging_done](selected_value) 
+    - I want to create a [bar](plot_type) chart based on [imaging_done](selected_value)
     - Create a [line](plot_type) plot for [occup_physiotherapy_received](selected_value)
     - [bar](plot_type)
     - [age](selected_value)
     - Plot a [line](plot_type) graph for [door to needle time](selected_value).
     - Show me a [bar](plot_type) chart for [door to groin](selected_value).
-    - Generate a [line](plot_type) plot for [discharge mrs](selected_value) 
-    - Create a [bar](plot_type) chart for [3 month mrs](selected_value) 
+    - Generate a [line](plot_type) plot for [discharge mrs](selected_value)
+    - Create a [bar](plot_type) chart for [3 month mrs](selected_value)
     - I want to see a [line](plot_type) plot for [three_m_mrs](selected_value).
-    - Plot a [bar](plot_type) graph for [occup_physiotherapy_received](selected_value) 
-    - [DNT]{"entity": "selected_value", "value": "door_to_needle"} 
-    - [DTN]{"entity": "selected_value", "value": "door_to_needle"} 
+    - Plot a [bar](plot_type) graph for [occup_physiotherapy_received](selected_value)
+    - [DNT]{"entity": "selected_value", "value": "door_to_needle"}
+    - [DTN]{"entity": "selected_value", "value": "door_to_needle"}
     - [door to needle]{"entity": "selected_value", "value": "door_to_needle"}
     - [door to needle time]{"entity": "selected_value", "value": "door_to_needle"}
     - [needle time]{"entity": "selected_value", "value": "door_to_needle"}
@@ -244,8 +270,6 @@ nlu:
     - [warfarin administered before onset]{"entity": "selected_value", "value": "before_onset_warfarin"}
     - [warfarin]{"entity": "selected_value", "value": "before_onset_warfarin"}
 
-
-
 - intent: intent_askttest
   examples: |
     - Compare to past
@@ -272,7 +296,7 @@ nlu:
     - Rest of my country
     - in all the country
     - compare me to my country
-    
+
 
 - intent: intent_askpredictors
   examples: |
@@ -347,7 +371,7 @@ nlu:
     - Numeric value
     - Measurement value
     - Value of interest
-    
+
 
 - synonym: door_to_needle
   examples: |
@@ -545,9 +569,7 @@ nlu:
     - tissue plasminogen activator (tPA) therapy
     - fibrinolytic therapy
 
-
 - lookup: plot_type
   examples: |
     - line
     - bar
-

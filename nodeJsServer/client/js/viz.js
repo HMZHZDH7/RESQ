@@ -63,7 +63,7 @@ export async function createLineChart(data = null, args = null) {
         });
     }
 
-    setupXYFiltering(labels, values);
+    //setupXYFiltering(labels, values);
 
     // Creating a line chart
     const ctx = document.getElementById('viz');
@@ -123,6 +123,11 @@ async function saveChartAsPng(chart) {
         showImage(img);
     };
     document.getElementById("gallery-container").appendChild(img);
+}
+
+export function clearImagesGallery() {
+  const galleryContainer = document.getElementById("gallery-container");
+  galleryContainer.innerHTML = "";
 }
 
 const setupXYFiltering = (x, y) => {

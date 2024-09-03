@@ -15,6 +15,10 @@ COPY ./actions/requirements.txt ./
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
+# Install SpaCy and the language model
+RUN pip install spacy
+RUN python -m spacy download en_core_web_md
+
 # Copy your actions code
 COPY ./actions /app/actions
 
