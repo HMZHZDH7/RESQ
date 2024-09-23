@@ -43,7 +43,6 @@ export function updateClientList(clients) {
   clientSelector.value = '';
 }
 
-
 // Example function to handle client selection
 export async function handleClientSelection(selectedUser) {
   try {

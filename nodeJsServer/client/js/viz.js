@@ -14,24 +14,20 @@ export async function createLineChart(data = null, args = null) {
     m_args = args;
     console.log("Creating new chart from new data & args");
     console.log("data :");
-    console.log(data);
     console.log(m_data);
     console.log("args :");
-    console.log(args);
     console.log(m_args);
   }
   else if (data) {
     m_data = data;
     console.log("Creating new chart from new data");
     console.log("data :");
-    console.log(data);
     console.log(m_data);
   }
   else if (args) {
     m_args = args;
     console.log("Creating new chart from new args");
     console.log("args :");
-    console.log(args);
     console.log(m_args);
   }
 

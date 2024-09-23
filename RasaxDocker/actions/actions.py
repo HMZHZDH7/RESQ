@@ -82,16 +82,38 @@ class ActionToggleNationalValue(Action):
             tracker: Tracker,
             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
+        # Get the current value and ensure it's a proper boolean
         current_value = tracker.get_slot("nat_value")
+
+        # Log the raw current value and its type for debugging
+        logger.info(f"Raw current value: {current_value}")
+        logger.info(f"Type of current value: {type(current_value)}")
+
+        # Convert to boolean if it's a string
+        if isinstance(current_value, str):
+            current_value = current_value.lower() == "true"
+
+        # Toggle the boolean value
         new_value = not current_value
 
+        # Log values to debug the toggle process
+        logger.info(f"Toggling National Value")
+        logger.info(f"Current value: {current_value}")
+        logger.info(f"New value: {new_value}")
+
+        # Update plot handler
         PLOT_HANDLER.change_arg("show_nat_val", new_value)
         args = PLOT_HANDLER.send_args()
         data = PLOT_HANDLER.edit_data(new_value)
 
+        # Send the response message
         dispatcher.utter_message(text="We are {} the national value.".format("showing" if new_value else "hiding"))
         dispatcher.utter_message(json_message={"data": data, "args": args})
+
+        # Log the updated data and arguments
         logger.info({"data": data, "args": args})
+
+        # Return the updated slot with the new value
         return [SlotSet("nat_value", new_value)]
 
 class PrefillSlots(Action):
@@ -304,7 +326,7 @@ class ActionDefaultFallback(Action):
     async def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         # Set a slot to indicate fallback without sending a message
         return [SlotSet("fallback_triggered", True)]
-        
+
 
 class ActionAdmin(Action):
 

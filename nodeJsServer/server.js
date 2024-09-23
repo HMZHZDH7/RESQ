@@ -50,6 +50,15 @@ app.get('/admin/', (req, res) => {
 
 let clients = [];
 let admins = [];
+let actionsList =
+`action_change_plottype - Slot: plot_type
+action_change_selectedvalue - Slot: selected_value, nat_value
+action_toggle_national_value - Slot: nat_value
+action_prefill_slots - Slot: plot_type, nat_value, selected_value, real_diff
+action_initialise - Slot: plot_type, nat_value, selected_value
+action_variable_ttest - Slot: real_diff
+action_explore_effects - Slot: selected_value
+action_default_fallback - Slot: fallback_triggered`;
 
 // Handle WebSocket connections
 wss.on('connection', (ws, request) => {
@@ -207,13 +216,20 @@ wss.on('connection', (ws, request) => {
             }));
           }
         }
-        else if (parsedMessage.action === 'admin') {
+        if (parsedMessage.action === 'admin') {
           console.log(`Received command from admin: ${parsedMessage.command}`);
 
           if (parsedMessage.command === "help") {
             ws.send(JSON.stringify({
               promptMsg: {
                 str: "action --slot1 val1 --slot2 val2",
+                error: false,
+              }
+            }));
+          } else if (parsedMessage.command === "list") {
+            ws.send(JSON.stringify({
+              promptMsg: {
+                str: actionsList,
                 error: false,
               }
             }));
@@ -228,12 +244,37 @@ wss.on('connection', (ws, request) => {
               rasaClient.triggerAction(action, slots)
               .then(response => {
                 console.log(`Action ${action} executed successfully:`, response);
+
+                // Send confirmation message to the admin
                 ws.send(JSON.stringify({
                   promptMsg: {
                     str: `Action ${action} executed successfully.`,
                     error: false,
+                  },
+                  message: response.message, // Include Rasa response message
+                  data: {
+                    data: response.data?.data?.file_content,
+                    args: response.data?.args?.file_content
                   }
                 }));
+
+                // Send the message to the selected user if available
+                if (ws.selectedUser) {
+                  const selectedClient = clients.find(client => client.user_id === ws.selectedUser);
+                  if (selectedClient) {
+                    selectedClient.send(JSON.stringify({
+                      error: false,
+                      message: [{ str: response.message, srv: true }]
+                    }));
+
+                    // Log the response for the selected user
+                    rasaClient.logSingleEntry(selectedClient.logFileHandle, response.message, true);
+                  } else {
+                    throw new Error("Couldn't find selected user");
+                  }
+                } else {
+                  throw new Error("No selected user to send the message to");
+                }
               })
               .catch(error => {
                 console.error(`Error executing action ${action}:`, error);
@@ -254,7 +295,7 @@ wss.on('connection', (ws, request) => {
               }));
             }
           }
-        } //admin
+        }
       }); //onmessage
 
       //Welcome Message
