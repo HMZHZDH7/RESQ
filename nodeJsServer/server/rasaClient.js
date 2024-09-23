@@ -22,6 +22,7 @@ function setupLogging(userId) {
   return logFilePath;
 }
 
+//Function to log a UserInteraction (User + Rasa)
 function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, rasaResponse) {
   const logEntries = [];
 
@@ -56,7 +57,7 @@ function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, r
   fs.writeFileSync(fileHandle, JSON.stringify(logArray, null, 2));
 }
 
-// Function to log a single entry
+//Function to log a single entry
 function logSingleEntry(fileHandle, message, isServer) {
   const timestamp = new Date().toISOString();
   const logEntry = {
@@ -80,6 +81,7 @@ function logSingleEntry(fileHandle, message, isServer) {
   fs.writeFileSync(fileHandle, JSON.stringify(logArray, null, 2));
 }
 
+//Fetch the online clients UUID
 function getUserLoggedList() {
   const logsDir = path.join(__dirname, 'logs');
   if (!fs.existsSync(logsDir)) {
@@ -90,6 +92,7 @@ function getUserLoggedList() {
   return files.map(file => path.basename(file, '.json'));
 }
 
+//Parse the logs json into a message frame for the user
 function parseLogsToSend(logs) {
   const messageLogs = logs.filter(log => log.message !== undefined).map(log => log.message);
 
@@ -110,7 +113,6 @@ function parseLogsToSend(logs) {
     data: dataMap
   };
 }
-
 
 //Request on Rasa and Parsing Message
 function sendMessageToRasa(message, userId) {
@@ -141,6 +143,7 @@ function sendMessageToRasa(message, userId) {
   });
 }
 
+//Parse the command string into a JSON fot the triggerAction
 function parseCommand(command) {
     const parts = command.trim().split(/\s+/);
     if (parts.length < 1) {
@@ -157,12 +160,11 @@ function parseCommand(command) {
         }
         slots[slotName] = slotValue;
     }
-    
+
     return { action, slots };
 }
 
-
-
+//Send a Frame like RASA for the Action server
 function triggerAction(nextAction, slot) {
   const payload = {
     next_action: nextAction,
@@ -213,10 +215,5 @@ function triggerAction(nextAction, slot) {
     throw new Error(`Failed to trigger action: ${error.message}`);
   });
 }
-
-// Example usage:
-// triggerAction("action_admin", {})
-//     .then(response => console.log(response))
-//     .catch(error => console.error(error));
 
 module.exports = { sendMessageToRasa, parseCommand, triggerAction, setupLogging, logInteraction, logSingleEntry, getUserLoggedList, parseLogsToSend };
