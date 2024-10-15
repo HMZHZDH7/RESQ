@@ -2,15 +2,17 @@ import WebSocket from "ws";
 import { Server } from "http";
 
 export default (server: Server) => {
-    const ws = new WebSocket.Server({
+    const wss = new WebSocket.Server({
         noServer: true,
         path: "/ws",
     });
 
     server.on("upgrade", (request, socket, head) => {
-        ws.handleUpgrade(request, socket, head, (websocket) => {
-            ws.emit("connection", websocket, request);
-        });
+        if (request.url === "/ws") {
+            wss.handleUpgrade(request, socket, head, (websocket) => {
+                wss.emit("connection", websocket, request);
+            });
+        }
     });
 };
 
