@@ -10,17 +10,22 @@ function setupRoutes(server: Express) {
     auth(server);
 
     /* Routes */
-    server.use("/dashboard", (req, res, next) => {
-        if (req.isAuthenticated()) {
-            next();
-        } else {
-            res.redirect("/login");
-        }
+
+    server.get("/", (req, res) => {
+        res.redirect("/dashboard/statistics");
     });
+
+    // server.use("/dashboard", (req, res, next) => {
+    //     if (req.isAuthenticated()) {
+    //         next();
+    //     } else {
+    //         res.redirect("/login");
+    //     }
+    // });
 
     server.get("/login", (req, res, next) => {
         if (req.isAuthenticated()) {
-            res.redirect("/dashboard");
+            res.redirect("/dashboard/statistics");
         } else {
             next();
         }
@@ -28,7 +33,7 @@ function setupRoutes(server: Express) {
 
     server.get("/register", (req, res, next) => {
         if (req.isAuthenticated()) {
-            res.redirect("/dashboard");
+            res.redirect("/dashboard/statistics");
         } else {
             next();
         }
