@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "../globals.css";
 import { cn } from "@/lib/utils";
 import Header from "@/components/header";
+import NextTopLoader from 'nextjs-toploader';
 
 const poppins = Poppins({
     subsets: ["latin"],
@@ -25,9 +26,10 @@ export default async function DashboardLayout({
             <body
                 className={cn(
                     `${poppins.className}`,
-                    "flex flex-col items-center bg-background"
+                    "flex flex-col items-center bg-background relative"
                 )}
             >
+                <NextTopLoader color="#2C79DD" showSpinner={false} />
                 <Header></Header>
                 {children}
             </body>
