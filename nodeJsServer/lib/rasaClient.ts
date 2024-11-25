@@ -1,15 +1,15 @@
-const fetch = require('node-fetch');
-const fs = require('fs');
-const path = require('path');
+import fetch from 'node-fetch';
+import fs from 'fs';
+import path from 'path';
 
 const RASA_URL = 'http://localhost:5005/webhooks/rest/webhook';
 const ACTION_URL = 'http://localhost:5055/webhook';
 
 //One file per client to solve concurrency problems
 // Function to setup logging for a user
-function setupLogging(userId) {
+function setupLogging(userId: string) {
   // Create logs directory if it doesn't exist
-  const logsDir = path.join(__dirname, 'logs');
+  const logsDir = path.join(process.cwd(), 'logs');
   if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir);
   }
@@ -23,7 +23,19 @@ function setupLogging(userId) {
 }
 
 //Function to log a UserInteraction (User + Rasa)
-function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, rasaResponse) {
+function logInteraction(
+  fileHandle: string,
+  userTimestamp: string,
+  userMessage: string,
+  rasaTimestamp: string,
+  rasaResponse: {
+    message: { str: string; srv: boolean; }[];
+    data?: {
+      data?: { file_content: string };
+      args?: { file_content: string }
+    }
+  }) {
+
   const logEntries = [];
 
   // User message log entry
@@ -38,8 +50,10 @@ function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, r
   if (rasaResponse.data) {
     logEntries.push({
       timestamp: rasaTimestamp,
-      data: { data: rasaResponse.data?.data?.file_content,
-        args: rasaResponse.data?.args?.file_content }
+      data: {
+        data: rasaResponse.data?.data?.file_content,
+        args: rasaResponse.data?.args?.file_content
+      }
     });
   }
 
@@ -58,7 +72,7 @@ function logInteraction(fileHandle, userTimestamp, userMessage, rasaTimestamp, r
 }
 
 //Function to log a single entry
-function logSingleEntry(fileHandle, message, isServer) {
+function logSingleEntry(fileHandle: string, message: string, isServer: boolean) {
   const timestamp = new Date().toISOString();
   const logEntry = {
     timestamp: timestamp,
@@ -83,7 +97,7 @@ function logSingleEntry(fileHandle, message, isServer) {
 
 //Fetch the online clients UUID
 function getUserLoggedList() {
-  const logsDir = path.join(__dirname, 'logs');
+  const logsDir = path.join(process.cwd(), 'logs');
   if (!fs.existsSync(logsDir)) {
     return [];
   }
@@ -93,7 +107,19 @@ function getUserLoggedList() {
 }
 
 //Parse the logs json into a message frame for the user
-function parseLogsToSend(logs) {
+function parseLogsToSend(
+  logs: {
+    timestamp: string;
+    message?: {
+      str: string;
+      srv: boolean;
+    };
+    data?: {
+      data: string | null;
+      args: string | null
+    }
+  }[]
+) {
   const messageLogs = logs.filter(log => log.message !== undefined).map(log => log.message);
 
   const dataMap = logs.reduce((acc, log) => {
@@ -106,7 +132,7 @@ function parseLogsToSend(logs) {
       }
     }
     return acc;
-  }, { data: null, args: null });
+  }, { data: null as string | null, args: null as string | null });
 
   return {
     message: messageLogs,
@@ -115,7 +141,7 @@ function parseLogsToSend(logs) {
 }
 
 //Request on Rasa and Parsing Message
-function sendMessageToRasa(message, userId) {
+function sendMessageToRasa(message: string, userId: string) {
   return fetch(RASA_URL, {
     method: 'POST',
     headers: {
@@ -123,49 +149,49 @@ function sendMessageToRasa(message, userId) {
     },
     body: JSON.stringify({ sender: userId, message }),
   })
-  .then(response => response.json())
-  .then(data => {
-    //For each element, pushing string message and args/data json
-    const formattedResponse = { message: [], data: {} };
-    data.forEach((item) => {
-      if (item.text) {
-        formattedResponse.message.push({str :item.text, srv : true});
-        //{str : , srv:true}
-      } else {
-        formattedResponse.data = item.custom;
-      }
-    });
+    .then(response => response.json())
+    .then(data => {
+      //For each element, pushing string message and args/data json
+      const formattedResponse: { message: { str: string; srv: boolean }[]; data: any } = { message: [], data: {} };
+      data.forEach((item: any) => {
+        if (item.text) {
+          formattedResponse.message.push({ str: item.text, srv: true });
+          //{str : , srv:true}
+        } else {
+          formattedResponse.data = item.custom;
+        }
+      });
 
-    return formattedResponse;
-  })
-  .catch(error => {
-    throw new Error(`Failed to send message to Rasa: ${error.message}`);
-  });
+      return formattedResponse;
+    })
+    .catch(error => {
+      throw new Error(`Failed to send message to Rasa: ${error.message}`);
+    });
 }
 
 //Parse the command string into a JSON fot the triggerAction
-function parseCommand(command) {
-    const parts = command.trim().split(/\s+/);
-    if (parts.length < 1) {
-        throw new Error('Invalid command format');
-    }
+function parseCommand(command: string) {
+  const parts = command.trim().split(/\s+/);
+  if (parts.length < 1) {
+    throw new Error('Invalid command format');
+  }
 
-    const action = parts[0];
-    const slots = {};
-    for (let i = 1; i < parts.length; i += 2) {
-        const slotName = parts[i].replace('--', '');
-        const slotValue = parts[i + 1];
-        if (!slotName || !slotValue) {
-            throw new Error('Invalid slot format');
-        }
-        slots[slotName] = slotValue;
+  const action = parts[0];
+  const slots: Record<string, string> = {};
+  for (let i = 1; i < parts.length; i += 2) {
+    const slotName = parts[i].replace('--', '');
+    const slotValue = parts[i + 1];
+    if (!slotName || !slotValue) {
+      throw new Error('Invalid slot format');
     }
+    slots[slotName] = slotValue;
+  }
 
-    return { action, slots };
+  return { action, slots };
 }
 
 //Send a Frame like RASA for the Action server
-function triggerAction(nextAction, slot) {
+function triggerAction(nextAction: string, slot: Record<string, string>) {
   const payload = {
     next_action: nextAction,
     tracker: {
@@ -200,20 +226,20 @@ function triggerAction(nextAction, slot) {
     },
     body: JSON.stringify(payload)
   })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`Server responded with status ${response.status}`);
-    }
-    return response.json();
-  })
-  .then(data => {
-    console.log(`Action ${nextAction} triggered successfully.`);
-    return data;
-  })
-  .catch(error => {
-    console.error(`Failed to trigger action ${nextAction}:`, error);
-    throw new Error(`Failed to trigger action: ${error.message}`);
-  });
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log(`Action ${nextAction} triggered successfully.`);
+      return data;
+    })
+    .catch(error => {
+      console.error(`Failed to trigger action ${nextAction}:`, error);
+      throw new Error(`Failed to trigger action: ${error.message}`);
+    });
 }
 
-module.exports = { sendMessageToRasa, parseCommand, triggerAction, setupLogging, logInteraction, logSingleEntry, getUserLoggedList, parseLogsToSend };
+export { sendMessageToRasa, parseCommand, triggerAction, setupLogging, logInteraction, logSingleEntry, getUserLoggedList, parseLogsToSend };

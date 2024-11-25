@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import React from "react";
 
 const filterVariants = cva(
-    "min-w-[150px] h-[48px] rounded-[4px] bg-background border-[1px] border-solid border-gray-light text-text transition-all outline-none px-[24px] placeholder:text-gray-dark",
+    "min-w-[150px] h-[48px] rounded-[4px] bg-background border-[1px] border-solid border-gray-light text-text transition-all outline-none px-[24px] placeholder:text-gray-dark hover:border-secondary focus:border-primary",
     {
         variants: {
             type: {

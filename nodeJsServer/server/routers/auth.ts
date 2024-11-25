@@ -11,7 +11,6 @@ auth.post("/", function (req, res, next) {
         function (err: Error, user: boolean, info: { message: string }) {
             if (user === false) {
                 //@ts-ignore
-                req.session.failedConnection = true;
                 res.redirect("/login?a=2");
             } else {
                 req.login(user, function (err) {
@@ -28,6 +27,19 @@ auth.post("/", function (req, res, next) {
         }
     )(req, res, next);
 });
+
+auth.get("/as-guest", (req, res, next) => {
+    if (!req.user) {
+        req.login({ userId: "0", username: "guest" }, (err) => {
+            if (err) next(err)
+            else {
+                req.session.cookie.expires = undefined;
+                res.redirect("/dashboard")
+            };
+        });
+    }
+    else res.redirect("/dashboard");
+})
 
 auth.use("/register", register);
 

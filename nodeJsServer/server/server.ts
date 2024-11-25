@@ -43,13 +43,13 @@ app.prepare()
         secret: process.env.AUTH_SECRET as string, // Secret for encrypting session ID
         name: "sessionId", // Name of the session cookie
         resave: false, // Prevents resaving sessions that haven't changed
-        saveUninitialized: true, // Save new sessions even if uninitialized
+        saveUninitialized: false, // Save new sessions even if uninitialized
         store: new MongoStore({ // Use MongoDB to store sessions
           mongoUrl: process.env.MONGODB_URI,
           stringify: false,
         }),
         cookie: {
-          httpOnly: process.env.NODE_ENV === "production", // Restrict cookie access in production
+          httpOnly: true, // Restrict cookie access
         },
       })
     );
@@ -61,17 +61,19 @@ app.prepare()
     // Serialize user information to save in session
     //@ts-ignore
     passport.serializeUser((user: IUser, cb) => {
-      cb(null, {
-        userId: user._id.valueOf(),
-        username: user.username
-      });
+      user.username === "guest" ? cb(null, { userId: "0", username: user.username }) :
+        cb(null, {
+          userId: user._id.valueOf(),
+          username: user.username
+        });
     });
 
     // Deserialize user information from session
-    passport.deserializeUser((session: { userId: string }, cb) => {
-      User.findById(session.userId)
-        .then((user) => cb(null, user))
-        .catch(cb);
+    passport.deserializeUser((session: { userId: string, username: string }, cb) => {
+      session.username === "guest" ? cb(null, { userId: session.userId, username: session.username }) :
+        User.findById(session.userId)
+          .then((user) => cb(null, user))
+          .catch(cb);
     });
 
     // Initialize Passport middleware and session support

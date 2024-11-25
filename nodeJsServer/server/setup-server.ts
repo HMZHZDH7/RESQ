@@ -12,16 +12,24 @@ function setupRoutes(server: Express) {
     /* Routes */
 
     server.get("/", (req, res) => {
-        res.redirect("/dashboard/statistics");
+        if (req.isAuthenticated()) {
+            res.redirect("/dashboard/statistics");
+        } else {
+            res.redirect("/login");
+        }
     });
 
-    // server.use("/dashboard", (req, res, next) => {
-    //     if (req.isAuthenticated()) {
-    //         next();
-    //     } else {
-    //         res.redirect("/login");
-    //     }
-    // });
+    server.use("/dashboard", (req, res, next) => {
+        if (req.isAuthenticated()) {
+            next();
+        } else {
+            res.redirect("/login");
+        }
+    });
+
+    server.get("/dashboard", (req, res, next) => {
+        res.redirect("/dashboard/statistics")
+    })
 
     server.get("/login", (req, res, next) => {
         if (req.isAuthenticated()) {
@@ -43,7 +51,6 @@ function setupRoutes(server: Express) {
         req.logout((err) => {
             if (err) return next(err);
             //@ts-ignore
-            req.session.justDisconnected = true;
             res.redirect("/login");
         });
     });
