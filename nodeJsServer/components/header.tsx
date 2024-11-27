@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Tab from "@/components/tab";
 import DashboardIcon from "@/components/icons/dashboard";
 import ChatbotIcon from "@/components/icons/chatbot";
+import LogoutIcon from "@/components/icons/logout";
 
 const tabs = [
     {
@@ -17,14 +17,21 @@ const tabs = [
 ];
 
 const Header = () => {
-    return <div className="w-full h-[63px] flex bg-gray-light pt-[13px] pl-[60px] pr-[270px] sticky top-0 z-10">
-        {
-            tabs.map(t => (
-                <Tab {...t} key={t.link} />
-            ))
-        }
-        <Image src="/img/resq-logo.png" alt="resq + logo" width={220} height={63} className="absolute top-0 right-0"></Image>
-    </div>;
+    return <div className="flex w-full h-[63px] bg-gray-light px-[60px] sticky top-0 z-10 items-center justify-between">
+        <div className="h-full flex  pt-[13px]">
+            {
+                tabs.map(t => (
+                    <Tab {...t} key={t.link} />
+                ))
+            }
+
+        </div>
+        <img src="/img/resq-logo.png" alt="resq + logo" className="h-4/5 w-auto absolute left-1/2 transform -translate-x-1/2" />
+        <a href="/logout" className="flex gap-[4px] items-center group">
+            <LogoutIcon width={28} height={28} className="fill-red-600 group-hover:fill-red-700" />
+            <p className="text-red-600 group-hover:text-red-700">Logout</p>
+        </a>
+    </div>
 };
 
 export default Header;
