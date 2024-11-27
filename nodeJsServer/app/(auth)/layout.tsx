@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "../globals.css";
 import { cn } from "@/lib/utils";
+import NextTopLoader from "nextjs-toploader";
 
 const poppins = Poppins({
     subsets: ["latin"],
@@ -27,6 +28,7 @@ export default async function AuthLayout({
                     "bg-gradient-to-br from-primary to-secondary flex flex-col items-center justify-center py-[50px]"
                 )}
             >
+                <NextTopLoader color="#FFFFFF" showSpinner={false} />
                 {children}
             </body>
         </html>
