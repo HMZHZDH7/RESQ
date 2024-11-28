@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 export interface IUser extends mongoose.Document {
     _id: ObjectId;
     username: string;
+    role: "guest" | "user" | "admin";
     salt: string;
     hash: string;
 }
@@ -13,6 +14,7 @@ const UserSchema = new Schema<IUser>({
         type: String,
         unique: true,
     },
+    role: String,
     salt: String,
     hash: String,
 });

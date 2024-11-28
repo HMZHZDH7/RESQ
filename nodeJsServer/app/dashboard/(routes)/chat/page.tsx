@@ -5,8 +5,6 @@ import { WebSocketProvider } from '@/components/contexts/WebSocketContext';
 import getSession from "@/lib/auth/getSession";
 
 export default async function ChatPage() {
-    const session = await getSession();
-    console.log(session);
     return (
         <WebSocketProvider>
             <div className="w-full flex-grow flex justify-center gap-[30px] px-[20px] py-[50px]">

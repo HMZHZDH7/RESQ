@@ -9,7 +9,7 @@ export interface ISession extends mongoose.Document {
         passport: {
             user: {
                 userId: string;
-                username: string;
+                role: string;
             };
         };
     };
@@ -30,7 +30,7 @@ const SessionSchema = new Schema<ISession>(
             passport: {
                 user: {
                     userId: String,
-                    username: String,
+                    role: String,
                 },
             },
         },

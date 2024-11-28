@@ -61,16 +61,16 @@ app.prepare()
     // Serialize user information to save in session
     //@ts-ignore
     passport.serializeUser((user: IUser, cb) => {
-      user.username === "guest" ? cb(null, { userId: "0", username: user.username }) :
+      user.username === "guest" ? cb(null, { userId: "-1", role: "guest" }) :
         cb(null, {
           userId: user._id.valueOf(),
-          username: user.username
+          role: user.role
         });
     });
 
     // Deserialize user information from session
     passport.deserializeUser((session: { userId: string, username: string }, cb) => {
-      session.username === "guest" ? cb(null, { userId: session.userId, username: session.username }) :
+      session.userId === "-1" ? cb(null, { userId: session.userId, username: "Guest", role: "guest" }) :
         User.findById(session.userId)
           .then((user) => cb(null, user))
           .catch(cb);

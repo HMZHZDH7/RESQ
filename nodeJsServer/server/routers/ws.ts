@@ -1,20 +1,20 @@
 import WebSocket from "ws";
 import { Server } from "http";
-import url from "url";
 import fs from "fs";
 import path from "path";
-import { v4 as uuidv4 } from "uuid";
 import * as rasaClient from "../../lib/rasaClient";
 import { getErrorMessage } from "../../lib/get-error-message";
+import session from "express-session";
+import cookieParser from "cookie-parser";
+import Session, { ISession } from "../../lib/db/models/session";
 
 interface WebSocketUser extends WebSocket {
-    user_id?: string;
     logFileHandle?: string;
     selectedUser?: string;
 }
 
-let clients: WebSocketUser[] = [];
-let admins: WebSocketUser[] = [];
+let clients: Map<String, WebSocketUser> = new Map();
+let admins: Map<String, WebSocketUser> = new Map();
 const actionsList =
     `action_change_plottype - Slot: plot_type
 action_change_selectedvalue - Slot: selected_value, nat_value
@@ -41,18 +41,36 @@ export default (server: Server) => {
 
 
     // Handle WebSocket connections
-    wss.on('connection', (ws: WebSocketUser, request) => {
-        // Parse the URL to get the query parameters (Admin === 'true')
-        const query = url.parse(request.url as string, true).query;
+    wss.on('connection', async (ws: WebSocketUser, request) => {
+        if (!request.headers.cookie) return;
+        let cookies: { [key: string]: string; } = {};
+
+        request.headers.cookie.split(`;`).forEach(function (cookie) {
+            let [name, ...rest] = cookie.split(`=`);
+            name = name?.trim();
+            if (!name) return;
+            const value = rest.join(`=`).trim();
+            if (!value) return;
+            cookies[name] = decodeURIComponent(value);
+        });
+
+        const signedCookies = cookieParser.signedCookies(cookies, process.env.AUTH_SECRET as string)
+        if (!signedCookies.sessionId) return;
+
+        const sessionContent: ISession | null = await Session.findById(signedCookies.sessionId);
+        if (!sessionContent) return;
+
+        const sessionId = sessionContent._id.valueOf();
+        const session = sessionContent.session.passport.user;
 
         //Admin logic
-        if (query.admin === 'true') {
-            admins.push(ws);
+        if (session.role === "admin") {
+            admins.set(sessionId, ws);
             console.log(`New admin connected`);
 
             // Send the current list of clients and users with logs to the new admin
             const userLoggedList = rasaClient.getUserLoggedList();
-            const clientList = clients.map(client => client.user_id);
+            const clientList = Array.from(clients.values());
             ws.send(JSON.stringify({
                 clients: {
                     connectedList: clientList,
@@ -62,17 +80,15 @@ export default (server: Server) => {
         }
         //User logic
         else {
-            ws.user_id = uuidv4().split('-')[0];  // Generate a unique user_id and take the first part
-
-            ws.logFileHandle = rasaClient.setupLogging(ws.user_id); // Create the logging file
-            clients.push(ws);
-            console.log(`New client connected with user_id: ${ws.user_id}`);
+            ws.logFileHandle = rasaClient.setupLogging(sessionId); // Create the logging file
+            clients.set(sessionId, ws);
+            console.log(`New client connected with user_id: ${sessionId}`);
 
             // Send updated client list to all admins
             const userLoggedList = rasaClient.getUserLoggedList();
             const clientListMessage = JSON.stringify({
                 clients: {
-                    connectedList: clients.map(client => client.user_id),
+                    connectedList: Array.from(clients.values()),
                     userLoggedList: userLoggedList
                 }
             });
@@ -127,11 +143,11 @@ export default (server: Server) => {
             else if (parsedMessage.action === 'sendMessageToRasa') {
                 let rasaTimestamp = null;
                 let userTimestamp = new Date().toISOString();
-                console.log(`${ws.user_id} asking: ${parsedMessage.message}`);
+                console.log(`${sessionId} asking: ${parsedMessage.message}`);
 
 
                 //Sending request to Rasa
-                rasaClient.sendMessageToRasa(parsedMessage.message, ws.user_id as string)
+                rasaClient.sendMessageToRasa(parsedMessage.message, sessionId)
                     .then(response => {
                         //Cli log
                         rasaTimestamp = new Date().toISOString();
@@ -149,7 +165,7 @@ export default (server: Server) => {
                         }));
 
                         //Sending it into the admin watching the clients
-                        const watchingAdmin = admins.find(admin => admin.selectedUser === ws.user_id);
+                        const watchingAdmin = Array.from(admins.values()).find(admin => admin.selectedUser === sessionId);
                         if (watchingAdmin) {
                             // Create a new array with parsedMessage at the start
                             const combinedMessages = [{ str: parsedMessage.message, srv: false }, ...response.message];
@@ -179,7 +195,7 @@ export default (server: Server) => {
                 try {
                     // Find the selected user into the list of active socket
                     if (ws.selectedUser) {
-                        const selectedClient = clients.find(client => client.user_id === ws.selectedUser);
+                        const selectedClient = clients.get(ws.selectedUser);
                         if (selectedClient) {
                             selectedClient.send(JSON.stringify({
                                 error: false,
@@ -244,7 +260,7 @@ export default (server: Server) => {
 
                                 // Send the message to the selected user if available
                                 if (ws.selectedUser) {
-                                    const selectedClient = clients.find(client => client.user_id === ws.selectedUser);
+                                    const selectedClient = clients.get(ws.selectedUser);
                                     if (selectedClient) {
                                         selectedClient.send(JSON.stringify({
                                             error: false,
@@ -286,18 +302,18 @@ export default (server: Server) => {
         ws.send(JSON.stringify({ message: { str: 'Hello from server', srv: true } }));
 
         ws.on('close', () => {
-            if (query.admin === 'true') {
+            if (session.role === "admin") {
                 console.log('Admin disconnected');
-                admins = admins.filter(admin => admin !== ws);
+                admins.delete(sessionId);
             } else {
-                console.log(`Client disconnected ${ws.user_id}`);
-                clients = clients.filter(client => client !== ws);
+                console.log(`Client disconnected ${sessionId}`);
+                clients.delete(sessionId);
 
                 // Send updated client list to all admins
                 const userLoggedList = rasaClient.getUserLoggedList();
                 const clientListMessage = JSON.stringify({
                     clients: {
-                        connectedList: clients.map(client => client.user_id),
+                        connectedList: Array.from(clients.values()),
                         userLoggedList: userLoggedList
                     }
                 });
