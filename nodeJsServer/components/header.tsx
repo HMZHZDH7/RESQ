@@ -28,8 +28,8 @@ const Header = () => {
         </div>
         <img src="/img/resq-logo.png" alt="resq + logo" className="h-4/5 w-auto absolute left-1/2 transform -translate-x-1/2" />
         <a href="/logout" className="flex gap-[4px] items-center group">
-            <LogoutIcon width={28} height={28} className="fill-red-600 group-hover:fill-red-700" />
-            <p className="text-red-600 group-hover:text-red-700">Logout</p>
+            <LogoutIcon width={28} height={28} className="fill-red-600 group-hover:fill-red-700 transition" />
+            <p className="text-red-600 group-hover:text-red-700 transition">Logout</p>
         </a>
     </div>
 };
