@@ -3,7 +3,6 @@ import { updateClientList, printUserCommand, printServerCommand } from './admin.
 import { createLineChart } from './viz.js';
 
 let ws;
-let pendingRequests = {};
 
 export function connectWebSocket(isAdmin) {
   return new Promise((resolve, reject) => {
@@ -83,9 +82,11 @@ export function connectWebSocket(isAdmin) {
         }
         else {console.error("Received empty data field");}
       }
+      //If the admin receive the list of users
       if (message.clients) {
         updateClientList(message.clients);
       }
+      //answer of a bash request
       if (message.promptMsg) {
         printServerCommand(message.promptMsg.str, message.promptMsg.error);
       }
@@ -100,9 +101,7 @@ export function connectWebSocket(isAdmin) {
       } else {
         throw new Error('WebSocket is not connected');
       }
-    } catch (error) {
-      throw error;
-    }
+    } catch (error) { throw error; }
   }
 
   // Directory of the server and json name
@@ -113,9 +112,7 @@ export function connectWebSocket(isAdmin) {
       } else {
         throw new Error('WebSocket is not connected');
       }
-    } catch (error) {
-      throw error;
-    }
+    } catch (error) { throw error; }
   }
 
   // Function to send a message to the server
@@ -126,11 +123,8 @@ export function connectWebSocket(isAdmin) {
       } else {
         throw new Error('WebSocket is not connected');
       }
-    } catch (error) {
-      throw error;
-    }
+    } catch (error) { throw error; }
   }
-
 
   // Function to send a message to the selected user via the server
   export function sendMessageToUser(message) {
@@ -146,6 +140,7 @@ export function connectWebSocket(isAdmin) {
     }
   }
 
+  //Decompress the filecontent encapsulated by the server
   async function retrieveFileContent(fileContent) {
     const base64ToUint8Array = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
     const compressedData = base64ToUint8Array(fileContent);
@@ -165,7 +160,6 @@ export function connectWebSocket(isAdmin) {
       if (done) break;
       jsonString += value;
     }
-
     return JSON.parse(jsonString);
   }
 

@@ -126,3 +126,45 @@ actions:
 session_config:
   session_expiration_time: 60
   carry_over_slots_to_new_session: true
+
+
+
+
+
+
+
+  slots:
+  age:
+    type: float
+  sys_blood_pressure:
+    type: float
+  dys_blood_pressure:
+    type: float
+  thrombolysis:
+    type: bool
+  cholesterol:
+    type: bool
+  nihss_score:
+    type: float
+
+actions:
+  - action_predict_distrage_mrs  # Register the prediction action
+
+responses:
+  utter_ask_age:
+    - text: "What is the patient's age?"
+
+  utter_ask_sys_blood_pressure:
+    - text: "What is the patient's systolic blood pressure?"
+
+  utter_ask_dys_blood_pressure:
+    - text: "What is the patient's diastolic blood pressure?"
+
+  utter_ask_thrombolysis:
+    - text: "Has the patient received thrombolysis? (Yes/No)"
+
+  utter_ask_cholesterol:
+    - text: "Does the patient have cholesterol issues? (Yes/No)"
+
+  utter_ask_nihss_score:
+    - text: "What is the patient's NIHSS score?"

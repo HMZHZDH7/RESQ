@@ -6,6 +6,12 @@ from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
 from rasa_sdk.types import DomainDict
 import logging
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.model_selection import cross_val_score
+from sklearn.linear_model import LinearRegression
+from models.regression_model import predict_distrage_mrs
+
 
 logger = logging.getLogger(__name__)
 
@@ -82,16 +88,38 @@ class ActionToggleNationalValue(Action):
             tracker: Tracker,
             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
+        # Get the current value and ensure it's a proper boolean
         current_value = tracker.get_slot("nat_value")
+
+        # Log the raw current value and its type for debugging
+        logger.info(f"Raw current value: {current_value}")
+        logger.info(f"Type of current value: {type(current_value)}")
+
+        # Convert to boolean if it's a string
+        if isinstance(current_value, str):
+            current_value = current_value.lower() == "true"
+
+        # Toggle the boolean value
         new_value = not current_value
 
+        # Log values to debug the toggle process
+        logger.info(f"Toggling National Value")
+        logger.info(f"Current value: {current_value}")
+        logger.info(f"New value: {new_value}")
+
+        # Update plot handler
         PLOT_HANDLER.change_arg("show_nat_val", new_value)
         args = PLOT_HANDLER.send_args()
         data = PLOT_HANDLER.edit_data(new_value)
 
+        # Send the response message
         dispatcher.utter_message(text="We are {} the national value.".format("showing" if new_value else "hiding"))
         dispatcher.utter_message(json_message={"data": data, "args": args})
+
+        # Log the updated data and arguments
         logger.info({"data": data, "args": args})
+
+        # Return the updated slot with the new value
         return [SlotSet("nat_value", new_value)]
 
 class PrefillSlots(Action):
@@ -304,7 +332,7 @@ class ActionDefaultFallback(Action):
     async def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         # Set a slot to indicate fallback without sending a message
         return [SlotSet("fallback_triggered", True)]
-        
+
 
 class ActionAdmin(Action):
 
@@ -327,4 +355,84 @@ class ActionAdmin(Action):
         dispatcher.utter_message(text="ActionAdmin has been triggered!")
 
         # Return an empty list to signify no modification to the conversation state
+        return []
+
+
+
+
+
+
+
+class ActionShowRegression(Action):
+    def name(self):
+        return "action_show_regression"
+
+    def run(self, dispatcher, tracker, domain):
+        # Code to generate the regression line plot
+        plt.scatter(y_test, y_pred)
+        plt.plot([y.min(), y.max()], [y.min(), y.max()], color='red', lw=2)
+        plt.xlabel('Actual Values')
+        plt.ylabel('Predicted Values')
+        plt.title('Linear Regression - Prediction of distrage_mrs')
+
+        # Save the figure
+        plt.savefig('regression_plot.png')
+        plt.close()
+
+        # Respond with the image
+        dispatcher.utter_message(text="Here is the regression line", image="regression_plot.png")
+
+
+
+
+class ActionShowCrossValidation(Action):
+    def name(self):
+        return "action_show_cross_validation"
+
+    def run(self, dispatcher, tracker, domain):
+        # Load the data
+        data = pd.read_csv('dataREanonymized_long.csv')
+        
+        # Select the predictive variables and the target
+        X = data[['age', 'sys_blood_pressure', 'dys_blood_pressure', 'thrombolysis', 'cholesterol', 'nihss_score']]
+        y = data['distrage_mrs']
+        
+        # Create a linear regression model
+        model = LinearRegression()
+        
+        # Perform 5-fold cross-validation
+        scores = cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error')
+        
+        # Calculate the mean and standard deviation of the scores
+        mean_score = -scores.mean()  # Convert negative MSE back to positive
+        std_score = scores.std()
+        
+        # Send the results back to the user
+        response = f"Cross-validation results:\nMean Squared Error (MSE): {mean_score:.2f}\nStandard Deviation of MSE: {std_score:.2f}"
+        dispatcher.utter_message(text=response)
+
+
+
+
+class ActionPredictDistrageMrs(Action):
+    def name(self):
+        return "action_predict_distrage_mrs"
+
+    def run(self, dispatcher, tracker, domain):
+        # Get slot values
+        age = tracker.get_slot("age")
+        sys_bp = tracker.get_slot("sys_blood_pressure")
+        dys_bp = tracker.get_slot("dys_blood_pressure")
+        thrombolysis = tracker.get_slot("thrombolysis")
+        cholesterol = tracker.get_slot("cholesterol")
+        nihss_score = tracker.get_slot("nihss_score")
+
+        # Prepare data for prediction
+        input_data = [age, sys_bp, dys_bp, thrombolysis, cholesterol, nihss_score]
+
+        # Get prediction
+        prediction = predict_distrage_mrs(input_data)
+
+        # Respond with the prediction
+        dispatcher.utter_message(text=f"The predicted 'distrage_mrs' value is: {prediction:.2f}")
         return []

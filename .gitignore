@@ -1,1 +1,7 @@
 node_modules
+.vs/
+.cache/
+.rasa/
+actions/__pycache__/
+results/
+nodeJsServer/server/logs/

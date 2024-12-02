@@ -38,3 +38,10 @@ rules:
 #        - selected_value: age
 #    - action: utter_happy
 #    - action: action_change_selectedvalue
+
+
+rules:
+  - rule: Retrieve the regression curve
+    steps:
+      - intent: request_regression_plot
+      - action: action_get_regression_plot

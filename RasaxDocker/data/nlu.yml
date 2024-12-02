@@ -573,3 +573,8 @@ nlu:
   examples: |
     - line
     - bar
+
+
+
+intents:
+  - ask_cross_validation

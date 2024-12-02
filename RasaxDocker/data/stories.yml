@@ -99,3 +99,18 @@ stories:
   - action: action_dysphagia_guideline
   - intent: affirm
   - action: action_anticoag_guideline
+
+
+
+actions:
+  - action_show_regression
+
+intents:
+  - show_regression
+
+
+  story:
+  - story: Show cross-validation results
+    steps:
+      - intent: ask_cross_validation
+      - action: action_show_cross_validation
