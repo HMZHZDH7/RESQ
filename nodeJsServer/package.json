@@ -6,6 +6,7 @@
     "dev": "nodemon",
     "build": "next build && tsc --project tsconfig.server.json",
     "start": "NODE_ENV=production node dist/server/server.js",
+    "edit-admin":"ts-node --project tsconfig.server.json edit-admin.ts",
     "lint": "next lint"
   },
   "keywords": [],
