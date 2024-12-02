@@ -3,24 +3,24 @@
 import { createContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { getErrorMessage } from "@/lib/get-error-message";
 
-interface Message {
+interface IMessage {
     content: string;
     type: "server" | "client";
 }
 
-interface Chart {
+interface IChart {
     data: any;
     args: any;
     image?: string;
 }
 
 type WebSocketContextType = {
-    messages: Message[];
+    messages: IMessage[];
     sendMessage: (message: string) => void;
-    charts: Chart[];
-    currentChart: Chart | null;
-    setChartFromHistory: (chartIndex: Chart) => void;
-    setImageForChart: (chart: Chart, image: string) => void;
+    charts: IChart[];
+    currentChart: IChart | null;
+    setChartFromHistory: (chartIndex: IChart) => void;
+    setImageForChart: (chart: IChart, image: string) => void;
 };
 
 const WebSocketContext = createContext<WebSocketContextType>({
@@ -34,9 +34,9 @@ const WebSocketContext = createContext<WebSocketContextType>({
 
 export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     const socket = useRef<WebSocket | null>(null);
-    const [chatMessages, setChatMessages] = useState<Message[]>([]);
-    const [charts, setCharts] = useState<Chart[]>([]);
-    const [currentChart, setCurrentChart] = useState<Chart | null>(null);
+    const [chatMessages, setChatMessages] = useState<IMessage[]>([]);
+    const [charts, setCharts] = useState<IChart[]>([]);
+    const [currentChart, setCurrentChart] = useState<IChart | null>(null);
     const lastChartDatasRef = useRef<{ data: null | any, args: null | any }>({ data: null, args: null });
     const maxCharts = 5;
 
@@ -129,7 +129,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (lastChartDatasRef.current.data && lastChartDatasRef.current.args) {
-            const newChart: Chart = { data: lastChartDatasRef.current.data, args: lastChartDatasRef.current.args }
+            const newChart: IChart = { data: lastChartDatasRef.current.data, args: lastChartDatasRef.current.args }
             setCharts(prevCharts => {
                 const updatedCharts = [newChart, ...prevCharts];
                 while (updatedCharts.length > maxCharts) updatedCharts.pop();
@@ -281,12 +281,12 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const setChartFromHistory = (chart: Chart) => {
+    const setChartFromHistory = (chart: IChart) => {
         console.log(chart, currentChart);
         if (chart !== currentChart) setCurrentChart(chart);
     };
 
-    const setImageForChart = (chart: Chart, image: string) => {
+    const setImageForChart = (chart: IChart, image: string) => {
         setCharts(prevCharts => {
             const updatedCharts = prevCharts.map(c => {
                 if (c === chart) {

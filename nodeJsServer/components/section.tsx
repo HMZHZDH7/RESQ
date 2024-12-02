@@ -3,7 +3,7 @@ import Filter from "@/components/filter";
 
 interface SectionProps {
     id: string;
-    sectionData: SectionData;
+    sectionData: ISectionData;
 }
 
 const Section = ({ id, sectionData }: SectionProps) => {

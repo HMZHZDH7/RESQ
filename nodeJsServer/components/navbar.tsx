@@ -7,7 +7,7 @@ import SvgRenderer from "@/components/svg-renderer"; // Renders SVG icons
 
 // Define interface for Navbar component props
 interface NavbarProps {
-    sections: SectionData[];
+    sections: ISectionData[];
 }
 
 // Navbar component with navigation links for quick section access

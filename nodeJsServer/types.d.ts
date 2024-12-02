@@ -1,13 +1,13 @@
-interface SectionData {
+interface ISectionData {
     label: string,
     id: string,
     icon: string,
-    filters: Filter[]
+    filters: IFilter[]
 };
 
 type FilterType = 'text' | 'number';
 
-interface Filter {
+interface IFilter {
     name: string,
     type: FilterType,
     label: ?string,

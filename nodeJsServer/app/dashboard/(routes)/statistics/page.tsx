@@ -8,7 +8,7 @@ const HomePage = () => {
 
     const ImageSvg = getSvgContent("Image");
 
-    const SECTIONS: SectionData[] = [
+    const SECTIONS: ISectionData[] = [
         {
             label: 'Section 1',
             icon: ImageSvg,
