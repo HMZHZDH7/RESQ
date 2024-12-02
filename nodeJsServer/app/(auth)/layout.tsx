@@ -3,6 +3,9 @@ import { Poppins } from "next/font/google";
 import "../globals.css";
 import { cn } from "@/lib/utils";
 import NextTopLoader from "nextjs-toploader";
+import UrlAlertReader from "@/components/url-alert-reader";
+import { AlertProvider } from '@/components/contexts/AlertContext';
+import AlertContainer from "@/components/alert-container";
 
 const poppins = Poppins({
     subsets: ["latin"],
@@ -29,7 +32,11 @@ export default async function AuthLayout({
                 )}
             >
                 <NextTopLoader color="#FFFFFF" showSpinner={false} />
-                {children}
+                <AlertProvider>
+                    <UrlAlertReader />
+                    <AlertContainer />
+                    {children}
+                </AlertProvider>
             </body>
         </html>
     );

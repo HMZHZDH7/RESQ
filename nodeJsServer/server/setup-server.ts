@@ -51,7 +51,7 @@ function setupRoutes(server: Express) {
         req.logout((err) => {
             if (err) return next(err);
             //@ts-ignore
-            res.redirect("/login");
+            res.redirect("/login?a=1");
         });
     });
 }

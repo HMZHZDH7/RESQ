@@ -3,82 +3,83 @@
 @tailwind utilities;
 
 body {
-  min-height: 100vh;
+    min-height: 100vh;
+    position: relative;
 }
 
 @layer utilities {
 
-  /* Chrome, Safari and Opera */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
-  }
-
-  @-webkit-keyframes detect-scroll {
-
-    from,
-    to {
-      --can-scroll: ;
-    }
-  }
-
-  @keyframes detect-scroll {
-
-    from,
-    to {
-      --can-scroll: ;
-    }
-  }
-
-  .scrollable-container {
-    scroll-timeline: --scroll-timeline y;
-    -webkit-animation: detect-scroll;
-    animation: detect-scroll;
-    animation-timeline: --scroll-timeline;
-    -webkit-animation-fill-mode: none;
-    animation-fill-mode: none;
-  }
-
-  .up-arrow,
-  .down-arrow {
-    -webkit-animation-name: reveal;
-    animation-name: reveal;
-    animation-timeline: --scroll-timeline;
-    -webkit-animation-fill-mode: both;
-    animation-fill-mode: both;
-
-    --visibility-if-can-scroll: var(--can-scroll) visible;
-    --visibility-if-cant-scroll: hidden;
-    visibility: var(--visibility-if-can-scroll, var(--visibility-if-cant-scroll));
-  }
-
-  .down-arrow {
-    animation-direction: reverse;
-  }
-
-  @-webkit-keyframes reveal {
-    0% {
-      opacity: 0;
+    /* Chrome, Safari and Opera */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
     }
 
-    100% {
-      opacity: 1;
-    }
-  }
-
-  @keyframes reveal {
-    0% {
-      opacity: 0;
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
     }
 
-    100% {
-      opacity: 1;
+    @-webkit-keyframes detect-scroll {
+
+        from,
+        to {
+            --can-scroll: ;
+        }
     }
-  }
+
+    @keyframes detect-scroll {
+
+        from,
+        to {
+            --can-scroll: ;
+        }
+    }
+
+    .scrollable-container {
+        scroll-timeline: --scroll-timeline y;
+        -webkit-animation: detect-scroll;
+        animation: detect-scroll;
+        animation-timeline: --scroll-timeline;
+        -webkit-animation-fill-mode: none;
+        animation-fill-mode: none;
+    }
+
+    .up-arrow,
+    .down-arrow {
+        -webkit-animation-name: reveal;
+        animation-name: reveal;
+        animation-timeline: --scroll-timeline;
+        -webkit-animation-fill-mode: both;
+        animation-fill-mode: both;
+
+        --visibility-if-can-scroll: var(--can-scroll) visible;
+        --visibility-if-cant-scroll: hidden;
+        visibility: var(--visibility-if-can-scroll, var(--visibility-if-cant-scroll));
+    }
+
+    .down-arrow {
+        animation-direction: reverse;
+    }
+
+    @-webkit-keyframes reveal {
+        0% {
+            opacity: 0;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    @keyframes reveal {
+        0% {
+            opacity: 0;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
 }

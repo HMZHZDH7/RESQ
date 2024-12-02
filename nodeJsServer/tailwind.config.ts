@@ -27,6 +27,12 @@ const config: Config = {
         '3xl': '2.369rem',
         '4xl': '3.158rem',
         '5xl': '4.210rem',
+      },
+      keyframes: {
+        newAlert: {
+          "0%": { opacity: "0", transform: "translateX(250px)", "-webkit-transform": "translateX(250px)" },
+          "100%": { opacity: "1", transform: "translateX(0)", "-webkit-transform": "translateX(0)" }
+        }
       }
     },
   },
