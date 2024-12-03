@@ -4,9 +4,9 @@ import fs from "fs";
 import path from "path";
 import * as rasaClient from "../../lib/rasaClient";
 import { getErrorMessage } from "../../lib/get-error-message";
-import session from "express-session";
 import cookieParser from "cookie-parser";
 import Session, { ISession } from "../../lib/db/models/session";
+import crypto from "crypto";
 
 interface WebSocketUser extends WebSocket {
     logFileHandle?: string;
@@ -60,17 +60,17 @@ export default (server: Server) => {
         const sessionContent: ISession | null = await Session.findById(signedCookies.sessionId);
         if (!sessionContent) return;
 
-        const sessionId = sessionContent._id.valueOf();
+        const conversationId = `${crypto.randomUUID()}`;
         const session = sessionContent.session.passport.user;
 
         //Admin logic
         if (session.role === "admin") {
-            admins.set(sessionId, ws);
+            admins.set(conversationId, ws);
             console.log(`New admin connected`);
 
             // Send the current list of clients and users with logs to the new admin
             const userLoggedList = rasaClient.getUserLoggedList();
-            const clientList = Array.from(clients.values());
+            const clientList = Array.from(clients.keys());
             ws.send(JSON.stringify({
                 clients: {
                     connectedList: clientList,
@@ -80,15 +80,15 @@ export default (server: Server) => {
         }
         //User logic
         else {
-            ws.logFileHandle = rasaClient.setupLogging(sessionId); // Create the logging file
-            clients.set(sessionId, ws);
-            console.log(`New client connected with user_id: ${sessionId}`);
+            ws.logFileHandle = rasaClient.setupLogging(conversationId); // Create the logging file
+            clients.set(conversationId, ws);
+            console.log(`New client connected with user_id: ${conversationId}`);
 
             // Send updated client list to all admins
             const userLoggedList = rasaClient.getUserLoggedList();
             const clientListMessage = JSON.stringify({
                 clients: {
-                    connectedList: Array.from(clients.values()),
+                    connectedList: Array.from(clients.keys()),
                     userLoggedList: userLoggedList
                 }
             });
@@ -143,11 +143,11 @@ export default (server: Server) => {
             else if (parsedMessage.action === 'sendMessageToRasa') {
                 let rasaTimestamp = null;
                 let userTimestamp = new Date().toISOString();
-                console.log(`${sessionId} asking: ${parsedMessage.message}`);
+                console.log(`${conversationId} asking: ${parsedMessage.message}`);
 
 
                 //Sending request to Rasa
-                rasaClient.sendMessageToRasa(parsedMessage.message, sessionId)
+                rasaClient.sendMessageToRasa(parsedMessage.message, conversationId)
                     .then(response => {
                         //Cli log
                         rasaTimestamp = new Date().toISOString();
@@ -165,7 +165,7 @@ export default (server: Server) => {
                         }));
 
                         //Sending it into the admin watching the clients
-                        const watchingAdmin = Array.from(admins.values()).find(admin => admin.selectedUser === sessionId);
+                        const watchingAdmin = Array.from(admins.values()).find(admin => admin.selectedUser === conversationId);
                         if (watchingAdmin) {
                             // Create a new array with parsedMessage at the start
                             const combinedMessages = [{ str: parsedMessage.message, srv: false }, ...response.message];
@@ -304,16 +304,16 @@ export default (server: Server) => {
         ws.on('close', () => {
             if (session.role === "admin") {
                 console.log('Admin disconnected');
-                admins.delete(sessionId);
+                admins.delete(conversationId);
             } else {
-                console.log(`Client disconnected ${sessionId}`);
-                clients.delete(sessionId);
+                console.log(`Client disconnected ${conversationId}`);
+                clients.delete(conversationId);
 
                 // Send updated client list to all admins
                 const userLoggedList = rasaClient.getUserLoggedList();
                 const clientListMessage = JSON.stringify({
                     clients: {
-                        connectedList: Array.from(clients.values()),
+                        connectedList: Array.from(clients.keys()),
                         userLoggedList: userLoggedList
                     }
                 });
