@@ -1,5 +1,5 @@
 "use client";
-import { createContext, ReactNode, useEffect, useRef } from 'react';
+import { createContext, ReactNode, useRef } from 'react';
 
 // Defines the structure of an alert object, specifying its message and type (limited to specific strings).
 interface IAlert {

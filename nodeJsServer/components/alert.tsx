@@ -54,7 +54,7 @@ const Alert = ({ message, type, alertFinished, id }: AlertProps) => {
             // Clears the timeout when the component is unmounted to avoid potential memory leaks.
             clearTimeout(lastTimeout);
         };
-    }, [alertRef]);
+    }, []);
 
     return (
         <div
