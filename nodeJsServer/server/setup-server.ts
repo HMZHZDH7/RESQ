@@ -50,8 +50,10 @@ function setupRoutes(server: Express) {
     server.get("/logout", (req, res, next) => {
         req.logout((err) => {
             if (err) return next(err);
-            //@ts-ignore
-            res.redirect("/login?a=1");
+            req.session.destroy((err) => {
+                if (err) next(err)
+                else res.redirect("/login?a=1");
+            });
         });
     });
 }

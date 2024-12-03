@@ -10,7 +10,6 @@ auth.post("/", function (req, res, next) {
         "local",
         function (err: Error, user: boolean, info: { message: string }) {
             if (user === false) {
-                //@ts-ignore
                 res.redirect("/login?a=2");
             } else {
                 req.login(user, function (err) {
