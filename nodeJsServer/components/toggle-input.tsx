@@ -1,12 +1,12 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export interface ButtonProps
+export interface ToggleInputProps
     extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
 }
 
-const ToggleInput = React.forwardRef<HTMLInputElement, ButtonProps>(
+const ToggleInput = React.forwardRef<HTMLInputElement, ToggleInputProps>(
     ({ className, label, ...props }, ref) => {
         return (
             <label

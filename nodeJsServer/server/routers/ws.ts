@@ -58,44 +58,10 @@ export default (server: Server) => {
         if (!signedCookies.sessionId) return;
 
         const sessionContent: ISession | null = await Session.findById(signedCookies.sessionId);
-        if (!sessionContent) return;
+        if (!sessionContent) return ws.close();
 
         const conversationId = `${crypto.randomUUID()}`;
         const session = sessionContent.session.passport.user;
-
-        //Admin logic
-        if (session.role === "admin") {
-            admins.set(conversationId, ws);
-            console.log(`New admin connected`);
-
-            // Send the current list of clients and users with logs to the new admin
-            const userLoggedList = rasaClient.getUserLoggedList();
-            const clientList = Array.from(clients.keys());
-            ws.send(JSON.stringify({
-                clients: {
-                    connectedList: clientList,
-                    userLoggedList: userLoggedList
-                }
-            }));
-        }
-        //User logic
-        else {
-            ws.logFileHandle = rasaClient.setupLogging(conversationId); // Create the logging file
-            clients.set(conversationId, ws);
-            console.log(`New client connected with user_id: ${conversationId}`);
-
-            // Send updated client list to all admins
-            const userLoggedList = rasaClient.getUserLoggedList();
-            const clientListMessage = JSON.stringify({
-                clients: {
-                    connectedList: Array.from(clients.keys()),
-                    userLoggedList: userLoggedList
-                }
-            });
-            admins.forEach(admin => {
-                if (admin.readyState === WebSocket.OPEN) { admin.send(clientListMessage); }
-            });
-        }
 
         ws.on('message', (message) => {
             const parsedMessage = JSON.parse(message.toString());
@@ -298,9 +264,6 @@ export default (server: Server) => {
             }
         }); //onmessage
 
-        //Welcome Message
-        ws.send(JSON.stringify({ message: { str: 'Hello from server', srv: true } }));
-
         ws.on('close', () => {
             if (session.role === "admin") {
                 console.log('Admin disconnected');
@@ -328,5 +291,42 @@ export default (server: Server) => {
         ws.onerror = (error) => {
             console.error('WebSocket error:', error);
         };
+
+        //Welcome Message
+        ws.send(JSON.stringify({ message: { str: 'Hello from server', srv: true }, isAdmin: session.role === "admin" }));
+
+        //Admin logic
+        if (session.role === "admin") {
+            admins.set(conversationId, ws);
+            console.log(`New admin connected`);
+
+            // Send the current list of clients and users with logs to the new admin
+            const userLoggedList = rasaClient.getUserLoggedList();
+            const clientList = Array.from(clients.keys());
+            ws.send(JSON.stringify({
+                clients: {
+                    connectedList: clientList,
+                    userLoggedList: userLoggedList
+                }
+            }));
+        }
+        //User logic
+        else {
+            ws.logFileHandle = rasaClient.setupLogging(conversationId); // Create the logging file
+            clients.set(conversationId, ws);
+            console.log(`New client connected with user_id: ${conversationId}`);
+
+            // Send updated client list to all admins
+            const userLoggedList = rasaClient.getUserLoggedList();
+            const clientListMessage = JSON.stringify({
+                clients: {
+                    connectedList: Array.from(clients.keys()),
+                    userLoggedList: userLoggedList
+                }
+            });
+            admins.forEach(admin => {
+                if (admin.readyState === WebSocket.OPEN) { admin.send(clientListMessage); }
+            });
+        }
     });
 };

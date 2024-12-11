@@ -16,7 +16,7 @@ const Section = ({ id, sectionData }: SectionProps) => {
                 sectionData.filters.length > 0 &&
                 <>
                     <div className="w-full px-[70px] py-[20px] flex flex-wrap gap-[50px]">
-                        {sectionData.filters.map((filter) => (<Filter type="text" name="test" label="Input test" />))}
+                        {sectionData.filters.map((filter, index) => (<Filter key={index} type="text" name="test" label="Input test" />))}
                     </div>
                     <div className="w-full h-[1px] bg-gray-light"></div>
                 </>

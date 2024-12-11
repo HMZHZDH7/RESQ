@@ -18,7 +18,7 @@ const tabs = [
 
 const Header = () => {
     return <div className="flex w-full h-[63px] bg-gray-light px-[60px] sticky top-0 z-10 items-center justify-between">
-        <div className="h-full flex  pt-[13px]">
+        <div className="h-full flex pt-[13px]">
             {
                 tabs.map(t => (
                     <Tab {...t} key={t.link} />

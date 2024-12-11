@@ -5,14 +5,19 @@ import { getErrorMessage } from "@/lib/get-error-message";
 
 interface IMessage {
     content: string;
-    type: "server" | "client";
-}
+    type: "server" | "client" | "error";
+};
 
 interface IChart {
     data: any;
     args: any;
     image?: string;
-}
+};
+
+interface ICommand {
+    type: "server" | "client" | "error";
+    content: string;
+};
 
 type WebSocketContextType = {
     messages: IMessage[];
@@ -21,6 +26,11 @@ type WebSocketContextType = {
     currentChart: IChart | null;
     setChartFromHistory: (chartIndex: IChart) => void;
     setImageForChart: (chart: IChart, image: string) => void;
+    conversationIdsList: string[];
+    currentConversationId: string;
+    setCurrentConversation: (conversationId: string) => void;
+    commands: ICommand[];
+    sendCommand: (command: string) => void;
 };
 
 const WebSocketContext = createContext<WebSocketContextType>({
@@ -29,22 +39,32 @@ const WebSocketContext = createContext<WebSocketContextType>({
     charts: [],
     currentChart: null,
     setChartFromHistory: () => { },
-    setImageForChart: () => { }
+    setImageForChart: () => { },
+    conversationIdsList: [],
+    currentConversationId: "",
+    setCurrentConversation: () => { },
+    commands: [],
+    sendCommand: () => { }
 });
 
 export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     const socket = useRef<WebSocket | null>(null);
+    const socketState = useRef<"waiting" | "connected">("waiting");
+    const isAdmin = useRef<boolean>(false);
     const [chatMessages, setChatMessages] = useState<IMessage[]>([]);
     const [charts, setCharts] = useState<IChart[]>([]);
     const [currentChart, setCurrentChart] = useState<IChart | null>(null);
+    const [conversationIdsList, setConversationIdsList] = useState<string[]>([]);
+    const [currentConversationId, setCurrentConversationId] = useState<string>("");
     const lastChartDatasRef = useRef<{ data: null | any, args: null | any }>({ data: null, args: null });
     const maxCharts = 5;
+    const [commands, setCommands] = useState<ICommand[]>([]);
 
-    async function handleIncommingMessage(message: any, admin: any) {
+    async function handleIncommingMessage(message: any) {
         //Handle potential errors
         if (message.error) {
             message.message.forEach((errorMsg: any) => {
-                printServerMessage(errorMsg.str);
+                printMessage({ str: errorMsg.str, srv: true }, true);
             });
         }
         else {
@@ -52,6 +72,13 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
             console.log("Handling message");
             console.log(message);
             if (message.message) {
+                if (message.message.str === "Hello from server" && socketState.current === "waiting" && "isAdmin" in message) {
+                    socketState.current = "connected";
+                    isAdmin.current = message.isAdmin === true;
+                    printMessage(message.message);
+                    return getInitialsData();
+                };
+
                 //Make single entries into array to be processed by forEach
                 const messages = Array.isArray(message.message) ? message.message : [message.message];
 
@@ -59,11 +86,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
                 //If admin print user message into server and opposite for user
                 //set pintFunction either printServerMessage or printUserMessage
                 messages.forEach((entrie: any) => {
-                    const printFunction = admin
-                        ? (entrie.srv ? printUserMessage : printServerMessage)
-                        : (entrie.srv ? printServerMessage : printUserMessage);
-
-                    printFunction(entrie.str);
+                    printMessage(entrie);
                 });
             }
             //Handle incomming data
@@ -71,38 +94,42 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
                 const json = message.data;
                 //Received compressed jsons
                 if (typeof json.data === 'string' && typeof json.args === 'string') {
-                    printServerMessage('Received both data and args, Creating a new chart....');
+                    printMessage({ str: 'Received both data and args, Creating a new chart....', srv: true });
                     const dataJson = await retrieveFileContent(json.data);
                     const argsJson = await retrieveFileContent(json.args);
                     createNewLineChart(dataJson, argsJson);
                 }
                 else if (typeof json.data === 'string') {
-                    printServerMessage('Received only data, Creating a new chart....');
+                    printMessage({ str: 'Received only data, Creating a new chart....', srv: true });
                     const dataJson = await retrieveFileContent(json.data);
                     createNewLineChart(dataJson, undefined);
                 }
                 else if (typeof json.args === 'string') {
-                    printServerMessage('Received only args, Creating a new chart....');
+                    printMessage({ str: 'Received only args, Creating a new chart....', srv: true });
                     const argsJson = await retrieveFileContent(json.args);
                     createNewLineChart(undefined, argsJson);
                 }
                 //Received clean jsons
                 else if (json.data !== null && json.args !== null) {
-                    printServerMessage('Received both data and args, Creating a new chart....');
+                    printMessage({ str: 'Received both data and args, Creating a new chart....', srv: true });
                     createNewLineChart(json.data, json.args);
                 }
                 else { console.error("Received empty data field"); }
             }
             //If the admin receive the list of users
             if (message.clients) {
-                //updateClientList(message.clients);
+                updateClientList(message.clients);
             }
             //answer of a bash request
             if (message.promptMsg) {
-                //printServerCommand(message.promptMsg.str, message.promptMsg.error);
+                printCommand({ content: message.promptMsg.str, type: message.promptMsg.error ? "error" : "server" });
             }
         }
-    }
+    };
+
+    async function getInitialsData() {
+        if (!isAdmin.current) fetchData(["data", "args"]);
+    };
 
     // Function to create the line chart
     async function createNewLineChart(data = null, args = null) {
@@ -228,15 +255,20 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         }
     }
 
-    //Set user message in the front and set it to the server
-    function printUserMessage(message: string) {
-        setChatMessages((prevMessages) => [...prevMessages, { content: message, type: "client" }]);
-    }
+    function printMessage({ str, srv }: { str: string, srv: boolean }, isErrorMessage: boolean = false) {
+        console.log("Message:", { str, srv });
+        if (isErrorMessage) setChatMessages((prevMessages) => [...prevMessages, { content: str, type: "error" }]);
+        else setChatMessages((prevMessages) => [...prevMessages, { content: str, type: srv != isAdmin.current ? "server" : "client" }]);
+    };
 
-    //Set Bot message inside the chatbox
-    function printServerMessage(message: string) {
-        setChatMessages((prevMessages) => [...prevMessages, { content: message, type: "server" }]);
-    }
+    function printCommand(command: { content: string, type: "client" | "server" | "error" }) {
+        setCommands((prevCommands) => [...prevCommands, command]);
+    };
+
+    function updateClientList({ connectedList, userLoggedList }: { connectedList: string[], userLoggedList: string[] }) {
+        setCurrentConversation("");
+        setConversationIdsList(userLoggedList);
+    };
 
     useEffect(() => {
         const ws = new WebSocket(`ws://localhost:3000/ws`);
@@ -244,12 +276,11 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
 
         ws.onopen = () => {
             console.log("Connected to the WebSocket server!");
-            fetchData(["data", "args"]);
         };
 
         ws.onmessage = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
-            handleIncommingMessage(data, false);
+            handleIncommingMessage(data);
         };
 
         ws.onclose = () => console.log('Disconnected from the WebSocket server');
@@ -259,12 +290,12 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         return () => ws.close();
     }, []);
 
-    const sendMessage = (message: string, isAdmin: boolean = false) => {
+    const sendMessage = (message: string) => {
 
-        if (isAdmin) {
+        if (isAdmin.current) {
             //Send the string into the selected client
             try {
-                printUserMessage(message);
+                printMessage({ str: message, srv: true });
                 sendMessageToUser(message);
             } catch (error) {
                 console.error(error);
@@ -273,7 +304,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         else {
             //Send the string into the nodejs server
             try {
-                printUserMessage(message);
+                printMessage({ str: message, srv: false });
                 sendMessageServer(message);
             } catch (error) {
                 console.error(error);
@@ -298,8 +329,27 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
+    const setCurrentConversation = (conversationId: string) => {
+        if (conversationId === "") return;
+        try {
+            console.log('Selected client:', conversationId);
+            setCurrentConversationId(conversationId);
+            setChatMessages([]);
+            setCurrentChart(null);
+            setCharts([]);
+            fetchUser(conversationId);
+        } catch (error) {
+            throw error;
+        };
+    };
+
+    const sendCommand = (command: string) => {
+        printCommand({ content: command, type: "client" });
+        sendAdminActionRequests(command);
+    };
+
     return (
-        <WebSocketContext.Provider value={{ messages: chatMessages, sendMessage, charts, currentChart, setChartFromHistory, setImageForChart }}>
+        <WebSocketContext.Provider value={{ messages: chatMessages, sendMessage, charts, currentChart, setChartFromHistory, setImageForChart, conversationIdsList, currentConversationId, setCurrentConversation, commands, sendCommand }}>
             {children}
         </WebSocketContext.Provider>
     );

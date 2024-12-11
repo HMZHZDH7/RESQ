@@ -79,7 +79,7 @@ const Navbar = ({ sections }: NavbarProps) => {
     };
 
     return (
-        <div className="fixed left-[20px] top-0 w-[440px] h-screen flex flex-col items-center justify-center pt-[110px] pb-[50px]">
+        <div className="fixed left-[20px] top-0 w-[440px] h-screen flex flex-col items-center justify-center pt-[113px] pb-[50px]">
             <div className="w-full h-full rounded-[15px] flex flex-col items-center gap-[30px] px-[38px] py-[24px] bg-primary shadow-[0px_3.5px_5.5px_0px_rgba(0,_0,_0,_0.02)]">
 
                 <div className="w-full rounded-[15px] flex flex-col items-center gap-[5px] py-[10px] bg-[#09101b66]">
