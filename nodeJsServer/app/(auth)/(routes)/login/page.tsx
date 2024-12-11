@@ -38,7 +38,7 @@ const LogInPage = () => {
             <p className="uppercase font-bold text-gray-dark text-sm">
                 Or
             </p>
-            <Link href="/auth/as-guest" className="font-semibold">Continue as guest</Link>
+            <Link href="/auth/as-guest" className="font-semibold" prefetch={false}>Continue as guest</Link>
         </form>
     );
 };

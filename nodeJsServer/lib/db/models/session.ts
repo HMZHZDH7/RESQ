@@ -9,7 +9,7 @@ export interface ISession extends mongoose.Document {
         passport: {
             user: {
                 userId: string;
-                role: string;
+                role: "guest" | "user" | "admin";
             };
         };
     };
@@ -23,7 +23,6 @@ const SessionSchema = new Schema<ISession>(
         expires: {
             type: Date,
             required: true,
-            unique: true,
         },
         session: {
             cookie: Object,

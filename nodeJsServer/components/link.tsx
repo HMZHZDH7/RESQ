@@ -5,10 +5,12 @@ const CustomLink = ({
     href,
     className,
     children,
+    prefetch
 }: {
     href: string;
     className?: string;
     children?: React.ReactNode;
+    prefetch?: boolean
 }) => {
     return (
         <Link
@@ -17,6 +19,7 @@ const CustomLink = ({
                 "text-primary hover:text-accent transition",
                 className
             )}
+            prefetch={prefetch}
         >
             {children}
         </Link>
