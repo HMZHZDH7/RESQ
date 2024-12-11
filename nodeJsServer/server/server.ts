@@ -94,8 +94,9 @@ app.prepare()
     });
 
     // Start the server
-    let httpServer = server.listen(3000, () => {
-      console.log("> Ready on http://localhost:3000");
+    const port = process.env.PORT && !isNaN(Number(process.env.PORT)) ? Number(process.env.PORT) : 3000;
+    let httpServer = server.listen(port, () => {
+      console.log(`> Ready on http://localhost:${port}`);
     });
 
     // Set up WebSocket server
