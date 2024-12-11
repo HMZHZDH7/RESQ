@@ -271,7 +271,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     };
 
     useEffect(() => {
-        const ws = new WebSocket(`ws://localhost:3000/ws`);
+        const ws = new WebSocket(`/ws`);
         socket.current = ws;
 
         ws.onopen = () => {
