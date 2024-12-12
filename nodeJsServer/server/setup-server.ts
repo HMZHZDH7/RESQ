@@ -17,6 +17,7 @@ function setupRoutes(server: Express) {
             };
             if (req.url.startsWith(basePath) && !req.url.startsWith(`${basePath}/ws`)) {
                 req.url = req.url.slice(basePath.length);
+                if (req.url === "") req.url = "/";
             };
         };
         next();
