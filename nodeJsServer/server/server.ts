@@ -1,13 +1,13 @@
 import dotenv from "dotenv";
 dotenv.config(); // Load environment variables from a .env file
 
-const basePath = process.env.BASE_PATH ? process.env.BASE_PATH.toLowerCase() : undefined;
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ? process.env.NEXT_PUBLIC_BASE_PATH.toLowerCase() : undefined;
 
 if (basePath) {
     const regex = /^(\/[a-zA-Z0-9_\-]+)+$/;
 
     if (!regex.test(basePath)) {
-        throw new Error("Invalid url BASE_PATH!");
+        throw new Error("Invalid url NEXT_PUBLIC_BASE_PATH!");
     };
 };
 

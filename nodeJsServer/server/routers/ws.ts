@@ -26,13 +26,16 @@ action_explore_effects - Slot: selected_value
 action_default_fallback - Slot: fallback_triggered`;
 
 export default (server: Server) => {
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH ? process.env.NEXT_PUBLIC_BASE_PATH.toLowerCase() : "";
+    const wsPath = `${basePath}/ws`;
+
     const wss = new WebSocket.Server({
         noServer: true,
-        path: "/ws",
+        path: wsPath,
     });
 
     server.on("upgrade", (request, socket, head) => {
-        if (request.url === "/ws") {
+        if (request.url === wsPath) {
             wss.handleUpgrade(request, socket, head, (websocket) => {
                 wss.emit("connection", websocket, request);
             });

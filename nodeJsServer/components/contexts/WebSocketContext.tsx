@@ -271,7 +271,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     };
 
     useEffect(() => {
-        const ws = new WebSocket(`/ws`);
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH ? process.env.NEXT_PUBLIC_BASE_PATH.toLowerCase() : "";
+        const ws = new WebSocket(`${basePath}/ws`);
         socket.current = ws;
 
         ws.onopen = () => {

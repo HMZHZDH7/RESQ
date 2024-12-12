@@ -6,7 +6,7 @@ import type { Express } from "express";
 import { Server } from "http";
 
 function setupRoutes(server: Express) {
-    const basePath = process.env.BASE_PATH ? process.env.BASE_PATH.toLowerCase() : undefined;
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH ? process.env.NEXT_PUBLIC_BASE_PATH.toLowerCase() : undefined;
 
     server.use((req, res, next) => {
         if (basePath) {
@@ -15,7 +15,7 @@ function setupRoutes(server: Express) {
                 url = basePath + url;
                 return originalRedirect.call(res, url);
             };
-            if (req.url.startsWith(basePath)) {
+            if (req.url.startsWith(basePath) && !req.url.startsWith(`${basePath}/ws`)) {
                 req.url = req.url.slice(basePath.length);
             };
         };

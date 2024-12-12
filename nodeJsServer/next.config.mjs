@@ -7,7 +7,7 @@ const nextConfig = {
         missingSuspenseWithCSRBailout: false
     },
     poweredByHeader: false,
-    basePath: process.env.BASE_PATH ? process.env.BASE_PATH.toLowerCase() : ""
+    basePath: process.env.NEXT_PUBLIC_BASE_PATH ? process.env.NEXT_PUBLIC_BASE_PATH.toLowerCase() : ""
 };
 
 export default nextConfig;
