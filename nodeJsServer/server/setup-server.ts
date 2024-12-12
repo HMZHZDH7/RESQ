@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../lib/get-error-message";
 import api from "./routers/api";
 import auth from "./routers/auth";
 import ws from "./routers/ws";
@@ -5,6 +6,22 @@ import type { Express } from "express";
 import { Server } from "http";
 
 function setupRoutes(server: Express) {
+    const basePath = process.env.BASE_PATH ? process.env.BASE_PATH.toLowerCase() : undefined;
+
+    server.use((req, res, next) => {
+        if (basePath) {
+            const originalRedirect: (url: string) => void = res.redirect;
+            res.redirect = (url) => {
+                url = basePath + url;
+                return originalRedirect.call(res, url);
+            };
+            if (req.url.startsWith(basePath)) {
+                req.url = req.url.slice(basePath.length);
+            };
+        };
+        next();
+    });
+
     /* Routers */
     api(server);
     auth(server);
