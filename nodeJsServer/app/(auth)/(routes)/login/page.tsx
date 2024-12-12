@@ -2,16 +2,18 @@ import { Button } from "@/components/button";
 import { Input } from "@/components/input";
 import { ToggleInput } from "@/components/toggle-input";
 import Link from "@/components/link";
+import { Form } from "@/components/form";
+import { Img } from "@/components/img";
 
 const LogInPage = () => {
     return (
-        <form
+        <Form
             action="/auth"
             method="post"
             className="w-[445px] bg-background rounded-[15px] flex flex-col gap-[22px] p-[40px] items-center justify-center"
         >
             <div className="flex gap-[10px] items-center">
-                <img src="/img/resq-logo.png" alt="resq + logo" width={220} height={63}></img>
+                <Img src="/img/resq-logo.png" alt="resq + logo" width={220} height={63}></Img>
             </div>
             <h2 className="text-2xl font-bold text-primary text-center">
                 Log in to the <br />dashboard
@@ -38,7 +40,7 @@ const LogInPage = () => {
                 Or
             </p>
             <Link href="/auth/as-guest" className="font-semibold" prefetch={false}>Continue as guest</Link>
-        </form>
+        </Form>
     );
 };
 
