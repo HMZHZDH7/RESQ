@@ -15,7 +15,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
     title: "RESQ",
-    description: "RESQ dashboard",
+    description: "RESQ",
 };
 
 export default async function AuthLayout({

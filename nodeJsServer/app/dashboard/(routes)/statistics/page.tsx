@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import Navbar from '@/components/navbar';
 import Section from '@/components/section';
 import { getSvgContent } from '@/lib/get-svg-content';
 const TEXT_FILTER: FilterType = 'text';
 const NUMBER_FILTER: FilterType = 'number';
+
+export const metadata: Metadata = {
+    title: "Home - RESQ Dashboard",
+    description: "RESQ dashboard homepage",
+};
 
 const HomePage = () => {
 

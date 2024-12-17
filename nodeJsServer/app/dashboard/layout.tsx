@@ -12,7 +12,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-    title: "RESQ",
+    title: "RESQ Dashboard",
     description: "RESQ dashboard",
 };
 

@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { Button } from "@/components/button";
 import { Input } from "@/components/input";
 import { ToggleInput } from "@/components/toggle-input";
 import Link from "@/components/link";
 import { Form } from "@/components/form";
 import { Img } from "@/components/img";
+
+export const metadata: Metadata = {
+    title: "Login - RESQ",
+    description: "RESQ login page",
+};
 
 const LogInPage = () => {
     return (
