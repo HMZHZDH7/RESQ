@@ -24,7 +24,9 @@ import User, { IUser } from "../lib/db/models/user";
 // Connect to MongoDB using Mongoose
 import MongoStore from "connect-mongo";
 import mongoose from "mongoose";
-mongoose.connect(process.env.MONGODB_URI as string); // Establish a database connection with MongoDB URI
+
+if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI environment variable is missing");
+mongoose.connect(process.env.MONGODB_URI); // Establish a database connection with MongoDB URI
 
 // Import route and websocket setup functions
 import { setupRoutes, setupWebsocket } from "./setup-server";
@@ -41,6 +43,7 @@ const handle = app.getRequestHandler();
 // Prepare the Next.js application and start the Express server
 app.prepare()
     .then(() => {
+        if (!process.env.AUTH_SECRET) throw new Error("AUTH_SECRET environment variable is missing");
         const server = express();
 
         // Parse incoming JSON and URL-encoded payloads
@@ -50,7 +53,7 @@ app.prepare()
         // Configure session middleware with MongoDB storage
         server.use(
             session({
-                secret: process.env.AUTH_SECRET as string, // Secret for encrypting session ID
+                secret: process.env.AUTH_SECRET, // Secret for encrypting session ID
                 name: "sessionId", // Name of the session cookie
                 resave: false, // Prevents resaving sessions that haven't changed
                 saveUninitialized: false, // Save new sessions even if uninitialized
