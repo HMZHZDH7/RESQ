@@ -34,11 +34,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # Train the model on the full training data
 model.fit(X_train, y_train)
 
--
+
 # Save the trained model to a file
 joblib.dump(model, 'linear_regression_model.pkl')
 print("Model saved successfully.")
--
+
 
 # Predict the values for the test set
 y_pred = model.predict(X_test)
@@ -69,14 +69,12 @@ response += f"\nCoefficient of Determination (R^2): {r2:.2f}"
 r2 = r2_score(y_test, y_pred)
 print(f"Coefficient of Determination (R^2): {r2:.2f}")
 
--
+
 # Log the cross-validation results
 logging.basicConfig(filename='cross_validation_results.log', level=logging.INFO)
 logging.info(f"Cross-validation scores: {scores}")
 logging.info(f"Mean MSE: {mean_score:.2f}")
 logging.info(f"Standard Deviation of MSE: {std_score:.2f}")
--
-
 
 
 

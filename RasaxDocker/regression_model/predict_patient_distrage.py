@@ -3,38 +3,40 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 import joblib
 
-# Charger les données
-file_path = 'data.csv'  # Chemin vers le fichier CSV
+# Load the data
+file_path = 'data.csv'  # Path to the CSV file
 
-# Charger le fichier CSV
+# Load the CSV file
 data = pd.read_csv(file_path)
 
-# Sélectionner les colonnes pertinentes pour la modélisation
+# Select relevant columns for modeling
 X = data[['age', 'sys_blood_pressure', 'dys_blood_pressure', 'thrombolysis', 'cholesterol', 'nihss_score']]
 y = data['distrage_mrs']
 
-# Créer un nouveau modèle de régression linéaire
+# Create a new linear regression model
 model = LinearRegression()
 
-# Diviser les données en ensembles d'entraînement et de test (20% pour le test)
+# Split the data into training and testing sets (20% for testing)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Entraîner le modèle sur les données d'entraînement
+# Train the model on the training data
 model.fit(X_train, y_train)
 
-# Sauvegarder le modèle entraîné
+# Save the trained model
 joblib.dump(model, 'new_linear_regression_model.pkl')
 
-# Prédire le distrage_mrs pour un patient spécifique (exemple : patient avec subject_id = 1)
-subject_id = 1  # Exemple d'ID de patient
+# Predict the distrage_mrs for a specific patient (example: patient with subject_id = 1)
+subject_id = 1  # Example of a patient ID
 
-# Trouver les caractéristiques du patient spécifique
+# Find the features of the specific patient
 subject_data = data[data['subject_id'] == subject_id][['age', 'sys_blood_pressure', 'dys_blood_pressure', 'thrombolysis', 'cholesterol', 'nihss_score']]
 
-# Vérifier si le patient existe dans le jeu de données
-if not patient_data.empty:
-    # Prédire la sortie pour ce patient
+# Check if the patient exists in the dataset
+if not subject_data.empty:  # Replace `patient_data` with `subject_data`
+    # Predict the output for this patient
     prediction = model.predict(subject_data)
-    print(f"Prédiction de distrage_mrs pour le patient {subject_id} : {prediction[0]:.2f}")
+    print(f"Prediction of distrage_mrs for patient {subject_id}: {prediction[0]:.2f}")
 else:
-    print(f"Le patient avec subject_id {subject_id} n'a pas été trouvé dans les données.")
+    print(f"The patient with subject_id {subject_id} was not found in the data.")
+
+

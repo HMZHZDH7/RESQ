@@ -23,6 +23,52 @@ rules:
       - intent: nlu_fallback
       - action: action_default_fallback
 
+  - rule: Retrieve the regression curve
+    steps:
+      - intent: request_regression_plot
+      - action: action_get_regression_plot
+
+  - rule: Predict distrage mrs
+    steps:
+      - intent: ask_for_distrage_prediction
+      - action: utter_ask_for_distrage_prediction
+      - action: utter_ask_age
+      - action: utter_ask_sys_blood_pressure
+      - action: utter_ask_dys_blood_pressure
+      - action: utter_ask_thrombolysis
+      - action: utter_ask_cholesterol
+      - action: utter_ask_nihss_score
+      - action: action_predict_distrage
+
+
+  - rule: Set slot value
+    steps:
+      - intent: inform
+      - action: action_set_slot
+      - slot_was_set:
+          - slot_name: value
+          
+  - rule: Ask for slot
+    steps:
+      - intent: ask_for_slot
+      - action: action_ask_slot
+      - slot_was_set:
+          - requested_slot: null
+  
+
+  - rule: Confirm prediction
+    steps:
+     - intent: ask_for_prediction
+     - action: utter_confirm_prediction
+
+  - rule: Goodbye rule
+    steps:
+     - intent: goodbye
+     - action: utter_goodbye
+
+
+
+
 #- rule: set plot type
 #  steps:
 #    - intent: intent_create_plot
@@ -39,9 +85,3 @@ rules:
 #    - action: utter_happy
 #    - action: action_change_selectedvalue
 
-
-rules:
-  - rule: Retrieve the regression curve
-    steps:
-      - intent: request_regression_plot
-      - action: action_get_regression_plot

@@ -6,7 +6,6 @@ intents:
   - affirm
   - reject
   - init
-  - intent_create_plot
   - request_create_plot_form
   - intent_askttest
   - intent_askpredictors
@@ -14,12 +13,131 @@ intents:
   - both
   - intent_askeffects
   - intent_guideline
+  - intent_create_plot
+  - request_regression_plot
+  - ask_for_distrage_prediction
+  - inform  # For capturing patient data (age, blood pressure, etc.)
+  - deny
+  - ask_age
+  - ask_systolic_blood_pressure
+  - ask_diastolic_blood_pressure
+  - ask_thrombolysis
+  - ask_cholesterol
+  - ask_nihss_score
+  - confirm_prediction
+  - create_plot
+  - ask_for_slot
+  - ask_cross_validation
+  - predict_distrage
+
+
+responses:
+  utter_goodbye:
+    - text: "Goodbye! Have a great day!"
+  utter_ask_for_distrage_prediction:
+    - text: "What is the patient's age?"
+  utter_ask_age:
+    - text: "What is the patient's age?"
+  utter_ask_systolic_blood_pressure:
+    - text: "What is the patient's systolic blood pressure?"
+  utter_ask_diastolic_blood_pressure:
+    - text: "What is the patient's diastolic blood pressure?"
+  utter_ask_thrombolysis:
+    - text: "Has the patient received thrombolysis? (Yes/No)"
+  utter_ask_cholesterol:
+    - text: "Does the patient have cholesterol issues? (Yes/No)"
+  utter_ask_nihss_score:
+    - text: "What is the patient's NIHSS score?"
+
+  utter_thank_you:
+    - text: "Thank you for the information. Let me predict the distrage_mrs."
+  utter_confirm_prediction:
+    - text: "Sure, I can help with that! I�ll ask you some questions about the patient to predict `distrage_mrs`."
+  
+
+  utter_greet:
+    - text: "Hello! How can I assist you today?"
+
+  utter_ask_statistical_test:
+    - text: "Which statistical test would you like to perform?"
+
+  utter_ask_causes_or_guidelines:
+    - text: "Would you like to know about causes or guidelines?"
+    - text: "If you like, I can use my A.I. to propose ways to improve patient outcomes. Otherwise, we can look if your hospital meets WSO guidelines."
+
+  utter_cause_or_effect:
+    - text: "You can choose to either analyse the cause of this increase or I we can explore how this effects your patients. What shall I do for you?"
+
+  utter_ask_plot_type:
+    - text: "What type of plot do you want to create?"
+
+  utter_ask_selected_value:
+    - text: "What value you want to see?"
+    - text: "I can also show you the median value for your country. I can also use some statistical tests to validate if the difference between quarters is real. How should I help?"
+
+  utter_submit_create_plot_form:
+    - text: "Great! I will create the plot with the specified details. Is there anything else I can help you with?"
+
+  utter_ask_build_model:
+    - text: "Shall I use my A.I. abilities to find some possible causes for this difference? Or would you rather analyse the impact of this change on patient outcomes?"
+
+  utter_ask_local_predictors:
+    - text: "These are based on data from multiple hospitals in your country. Should I perform this analysis only for your hospital? Otherwise, tell me which indicator you want to explore."
+    - text: "Can you provide details about the local predictors?"
+
+  utter_explore_effects:
+    - text: "Would you rather look at: mRS at discharge or NIHSS?"
+
+  utter_new_selected_value:
+    - text: "Here is the new selected value."
+
+  utter_start_prediction:
+    - text: "Let's start the prediction process."
+
+
+actions:
+- action_change_plottype
+- action_change_selectedvalue
+- action_prefill_slots
+- action_variable_ttest
+- action_toggle_national_value
+- action_find_predictors
+- action_global_predictions
+- action_initialise
+- action_explore_effects
+- action_dnt_guideline
+- utter_submit_create_plot_form
+- action_init
+- utter_greet
+- utter_cause_or_effect
+- utter_new_selected_value
+- utter_ask_statistical_test
+- utter_ask_build_model
+- utter_ask_causes_or_guidelines
+- action_dysphagia_guideline
+- action_anticoag_guideline
+- action_default_fallback
+- action_get_regression_plot
+- action_set_slot
+- action_ask_slot
+- action_show_cross_validation
+- action_create_plot
+- action_generate_regression_plot
+- action_predict_distrage
+- utter_ask_local_predictors
+- utter_start_prediction
 
 entities:
   - selected_value
   - plot_type
   - nat_value
   - real_diff
+  - age
+  - systolic_blood_pressure
+  - diastolic_blood_pressure
+  - thrombolysis
+  - cholesterol
+  - nihss_score
 
 slots:
   plot_type:
@@ -50,121 +168,112 @@ slots:
       - type: from_entity
         entity: real_diff
 
-  fallback_triggered:
-    type: bool
-    initial_value: false
+  age:
+    type: text
+    influence_conversation: true
     mappings:
-      - type: from_intent
-        value: true
-        intent: nlu_fallback
+      - type: from_entity
+        entity: age
 
-forms:
-  create_plot_form:
-    required_slots:
-    - plot_type
-    - selected_value
-    - nat_value
-    - real_diff
+  systolic_blood_pressure:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: systolic_blood_pressure
 
-responses:
-  utter_greet:
-  - text: "Hey! I've started out by showing you your door to needle time since it has been increasing over the past few quarters."
+  diastolic_blood_pressure:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: diastolic_blood_pressure
 
-  utter_new_selected_value:
-    - text: "I can also show you the median value for your country. I can also use some statistical tests to validate if the difference between quarters is real. How should I help?"
+  thrombolysis:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: thrombolysis
 
-  utter_ask_statistical_test:
-    - text: "Shall I use some statistical tests to validate if the difference between quarters is real"
+  cholesterol:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: cholesterol
 
-  utter_cause_or_effect:
-    - text: "You can choose to either analyse the cause of this increase or I we can explore how this effects your patients. What shall I do for you?"
+  nihss_score:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: nihss_score
 
-  utter_ask_plot_type:
-    - text: "What type of plot do you want to create?"
+required_slots:
+  plot_type:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: plot_type
 
-  utter_ask_selected_value:
-    - text: "What value you want to see?"
+  selected_value:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: selected_value
 
-  utter_submit_create_plot_form:
-    - text: "Great! I will create the plot with the specified details. Is there anything else I can help you with?"
+  nat_value:
+    type: bool
+    mappings:
+      - type: from_entity
+        entity: nat_value
 
-  utter_ask_build_model:
-    - text: "Shall I use my A.I. abilities to find some possible causes for this difference? Or would you rather analyse the impact of this change on patient outcomes?"
+  real_diff:
+    type: bool
+    mappings:
+      - type: from_entity
+        entity: real_diff
 
-  utter_ask_local_predictors:
-    - text: "These are based on data from multiple hospitals in your country. Should I perform this analysis only for your hospital? Otherwise, tell me which indicator you want to explore."
+  age:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: age
 
-  utter_ask_causes_or_guidelines:
-    - text: "If you like, I can use my A.I. to propose ways to improve patient outcomes. Otherwise, we can look if your hospital meets WSO guidelines."
+  systolic_blood_pressure:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: systolic_blood_pressure
 
-  #utter_explore_effects:
-  #  - text: "Would you rather look at: mRS at discharge or NIHSS?"
+  diastolic_blood_pressure:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: diastolic_blood_pressure
 
-actions:
-- action_change_plottype
-- action_change_selectedvalue
-- action_prefill_slots
-- action_variable_ttest
-- action_toggle_national_value
-- action_find_predictors
-- action_global_predictions
-- action_initialise
-- action_explore_effects
-- action_dnt_guideline
-- utter_submit_create_plot_form
-- action_init
-- utter_greet
-- utter_cause_or_effect
-- utter_new_selected_value
-- utter_ask_statistical_test
-- utter_ask_build_model
-- utter_ask_causes_or_guidelines
-- action_dysphagia_guideline
-- action_anticoag_guideline
-- action_default_fallback
+  thrombolysis:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: thrombolysis
+
+  cholesterol:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: cholesterol
+
+  nihss_score:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: nihss_score
+
+
+
 
 session_config:
   session_expiration_time: 60
   carry_over_slots_to_new_session: true
-
-
-
-
-
-
-
-  slots:
-  age:
-    type: float
-  sys_blood_pressure:
-    type: float
-  dys_blood_pressure:
-    type: float
-  thrombolysis:
-    type: bool
-  cholesterol:
-    type: bool
-  nihss_score:
-    type: float
-
-actions:
-  - action_predict_distrage_mrs  # Register the prediction action
-
-responses:
-  utter_ask_age:
-    - text: "What is the patient's age?"
-
-  utter_ask_sys_blood_pressure:
-    - text: "What is the patient's systolic blood pressure?"
-
-  utter_ask_dys_blood_pressure:
-    - text: "What is the patient's diastolic blood pressure?"
-
-  utter_ask_thrombolysis:
-    - text: "Has the patient received thrombolysis? (Yes/No)"
-
-  utter_ask_cholesterol:
-    - text: "Does the patient have cholesterol issues? (Yes/No)"
-
-  utter_ask_nihss_score:
-    - text: "What is the patient's NIHSS score?"

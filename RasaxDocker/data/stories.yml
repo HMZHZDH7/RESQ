@@ -1,116 +1,184 @@
 version: "3.1"
 
 stories:
+  - story: Initialising
+    steps:
+      - intent: greet
+      - action: action_prefill_slots
+      - action: action_initialise
+      - action: utter_greet
+      - action: utter_new_selected_value
 
-- story: Initialising
-  steps:
-  - intent: greet
-  - action: action_prefill_slots
-  - action: action_initialise
-  - action: utter_greet
-  - action: utter_new_selected_value
+  - story: Initialising with national value
+    steps:
+      - action: utter_new_selected_value
+      - intent: intent_shownatvalue
+      - action: action_toggle_national_value
+      - action: utter_ask_statistical_test
 
-- story: Initialising with national value
-  steps:
-  - action: utter_new_selected_value
-  - intent: intent_shownatvalue
-  - action: action_toggle_national_value
-  - action: utter_ask_statistical_test
+  - story: From nat value to stat test
+    steps:
+      - action: utter_ask_statistical_test
+      - intent: affirm
+      - action: action_variable_ttest
 
-- story: From nat value to stat test #INCOMPLETE: NEEDS TO LEAD TO DIFFERENT STORIES. ASK TO INVESTIGATE CAUSES BUT ONLY IF THERE IS A CHANGE
-  steps:
-  - action: utter_ask_statistical_test
-  - intent: affirm
-  - action: action_variable_ttest
+  - story: From nat value to stat test negative path
+    steps:
+      - action: utter_ask_statistical_test
+      - intent: reject
 
-- story: From nat value to stat test negative path  #INCOMPLETE: NEEDS TO HANDLE REJECTION
-  steps:
-  - action: utter_ask_statistical_test
-  - intent: reject
+  - story: Initialising with statistical value
+    steps:
+      - action: utter_new_selected_value
+      - intent: intent_askttest
+      - action: action_variable_ttest
 
-- story: Initialising with statistical value #INCOMPLETE: NEEDS TO LEAD TO DIFFERENT STORIES. ASK TO INVESTIGATE CAUSES BUT ONLY IF THERE IS A CHANGE
-  steps:
-  - action: utter_new_selected_value
-  - intent: intent_askttest
-  - action: action_variable_ttest
+  - story: Initialising both options
+    steps:
+      - action: utter_new_selected_value
+      - intent: both
+      - action: action_toggle_national_value
+      - action: action_variable_ttest
 
-- story: Initialising both options
-  steps:
-  - action: utter_new_selected_value
-  - intent: both
-  - action: action_toggle_national_value
-  - action: action_variable_ttest
+  - story: From stat to global prediction
+    steps:
+      - action: action_variable_ttest
+      - intent: intent_askpredictors
+      - action: action_global_predictions
+      - action: utter_ask_local_predictors
 
-- story: From stat to global prediction
-  steps:
-  - action: action_variable_ttest
-  - intent: intent_askpredictors
-  - action: action_global_predictions
-  - action: utter_ask_local_predictors
+  - story: Find local predictors
+    steps:
+      - action: utter_ask_local_predictors
+      - intent: affirm
+      - action: action_find_predictors
 
-- story: Find local predictors
-  steps:
-  - action: utter_ask_local_predictors
-  - intent: affirm
-  - action: action_find_predictors
+  - story: Show national value
+    steps:
+      - intent: intent_shownatvalue
+      - action: action_toggle_national_value
 
-- story: Show national value
-  steps:
-  - intent: intent_shownatvalue
-  - action: action_toggle_national_value
+  - story: From stat to finding effect
+    steps:
+      - action: action_variable_ttest
+      - intent: intent_askeffects
+      - action: action_explore_effects
+      - action: action_variable_ttest
+      - action: utter_ask_causes_or_guidelines
 
-- story: From stat to finding effect
-  steps:
-  - action: action_variable_ttest
-  - intent: intent_askeffects
-  - action: action_explore_effects
-  - action: action_variable_ttest
-  - action: utter_ask_causes_or_guidelines
+  - story: From finding effect to predictors
+    steps:
+      - action: utter_ask_causes_or_guidelines
+      - intent: intent_askpredictors
+      - action: action_global_predictions
 
-- story: From finding effect to predictors
-  steps:
-  - action: utter_ask_causes_or_guidelines
-  - intent: intent_askpredictors
-  - action: action_global_predictions
+  - story: From local preds to patient effects
+    steps:
+      - action: action_find_predictors
+      - intent: intent_askeffects
+      - action: action_explore_effects
+      - action: action_variable_ttest
+      - action: utter_ask_causes_or_guidelines
 
-- story: From local preds to patient effects
-  steps:
-  - action: action_find_predictors
-  - intent: intent_askeffects
-  - action: action_explore_effects
-  - action: action_variable_ttest
-  - action: utter_ask_causes_or_guidelines
+  - story: Looking at guidelines
+    steps:
+      - action: utter_ask_causes_or_guidelines
+      - intent: intent_guideline
+      - action: action_dnt_guideline
+
+  - story: Looking at dysphagia guideline
+    steps:
+      - action: action_dnt_guideline
+      - intent: affirm
+      - action: action_dysphagia_guideline
+
+  - story: Looking at anticoagulation guideline
+    steps:
+      - action: action_dysphagia_guideline
+      - intent: affirm
+      - action: action_anticoag_guideline
+
+  - story: Show cross-validation results
+    steps:
+      - intent: ask_cross_validation
+      - action: action_show_cross_validation
+
+  - story: Create plot
+    steps:
+      - intent: create_plot
+      - action: action_create_plot
+
+  - story: Generate regression plot
+    steps:
+      - intent: request_regression_plot
+      - action: action_generate_regression_plot
 
 
-- story: Looking at guidelines
-  steps:
-  - action: utter_ask_causes_or_guidelines
-  - intent: intent_guideline
-  - action: action_dnt_guideline
+  - story: predict distrage
+    steps:
+      - intent: predict_distrage
+      - action: utter_start_prediction
+      - action: utter_ask_age
+      - intent: ask_patient_age
+        entities:
+          - age: 65
+      - action: utter_ask_systolic_blood_pressure
+      - intent: ask_systolic_blood_pressure
+        entities:
+          - systolic_blood_pressure: 120
+      - action: utter_ask_diastolic_blood_pressure
+      - intent: ask_diastolic_blood_pressure
+        entities:
+          - diastolic_blood_pressure: 80
+      - action: utter_ask_thrombolysis
+      - intent: ask_thrombolysis
+        entities:
+          - thrombolysis: "Yes"
+      - action: utter_ask_cholesterol
+      - intent: ask_cholesterol
+        entities:
+          - cholesterol: "No"
+      - action: utter_ask_nihss_score
+      - intent: ask_nihss_score
+        entities:
+          - nihss_score: 10
+      - action: utter_thank_you
 
-- story: Looking at guidelines
-  steps:
-  - action: action_dnt_guideline
-  - intent: affirm
-  - action: action_dysphagia_guideline
 
-- story: Looking at guidelines
-  steps:
-  - action: action_dysphagia_guideline
-  - intent: affirm
-  - action: action_anticoag_guideline
 
 
 
 actions:
   - action_show_regression
+  - action_predict_distrage
+  - action_show_cross_validation
+  - action_create_plot
+  - action_generate_regression_plot
+  - action_find_predictors
+  - action_variable_ttest
+  - action_global_predictions
+  - action_explore_effects
+  - action_dnt_guideline
+  - action_dysphagia_guideline
+  - action_anticoag_guideline
+  - action_toggle_national_value
+  - action_prefill_slots
+  - action_initialise
+  - action_show_cross_validation
 
 intents:
   - show_regression
-
-
-  story:
-  - story: Show cross-validation results
-    steps:
-      - intent: ask_cross_validation
-      - action: action_show_cross_validation
+  - predict_distrage
+  - ask_cross_validation
+  - create_plot
+  - request_regression_plot
+  - ask_for_distrage_prediction
+  - inform
+  - intent_shownatvalue
+  - intent_askttest
+  - intent_askpredictors
+  - intent_askeffects
+  - intent_guideline
+  - affirm
+  - reject
+  - both

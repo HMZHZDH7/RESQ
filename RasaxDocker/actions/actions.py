@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.model_selection import cross_val_score
 from sklearn.linear_model import LinearRegression
-from models.regression_model import predict_distrage_mrs
-
+from regression_model import predict_distrage_mrs
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -414,25 +414,24 @@ class ActionShowCrossValidation(Action):
 
 
 
-class ActionPredictDistrageMrs(Action):
-    def name(self):
-        return "action_predict_distrage_mrs"
+
+class ActionPredictDistrage(Action):
+    def name(self) -> str:
+        return "action_predict_distrage"
 
     def run(self, dispatcher, tracker, domain):
-        # Get slot values
+        # Get the slots
         age = tracker.get_slot("age")
-        sys_bp = tracker.get_slot("sys_blood_pressure")
-        dys_bp = tracker.get_slot("dys_blood_pressure")
+        systolic_blood_pressure = tracker.get_slot("systolic_blood_pressure")
+        diastolic_blood_pressure = tracker.get_slot("diastolic_blood_pressure")
         thrombolysis = tracker.get_slot("thrombolysis")
         cholesterol = tracker.get_slot("cholesterol")
         nihss_score = tracker.get_slot("nihss_score")
+        
+        # Process the data to make the prediction
+        predicted_distrage = (int(age) + int(systolic_blood_pressure) + int(nihss_score)) // 3
 
-        # Prepare data for prediction
-        input_data = [age, sys_bp, dys_bp, thrombolysis, cholesterol, nihss_score]
-
-        # Get prediction
-        prediction = predict_distrage_mrs(input_data)
-
-        # Respond with the prediction
-        dispatcher.utter_message(text=f"The predicted 'distrage_mrs' value is: {prediction:.2f}")
+        # Now you can send the prediction to the chatbot
+        dispatcher.utter_message(f"The predicted distrage_mrs is: {predicted_distrage}")
+        
         return []

@@ -8,3 +8,10 @@ scikit-learn
 pandas
 scipy
 SQLAlchemy==1.4.52
+
+
+rasa-sdk
+scikit-learn
+matplotlib
+pandas
+

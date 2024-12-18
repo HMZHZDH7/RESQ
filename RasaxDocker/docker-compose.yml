@@ -6,6 +6,7 @@ services:
     image: rasa/rasa:3.6.20-full
     volumes:
       - ./models:/app/models
+      - ./RasaXDocker:/app
       - ./:/app
     command: ["run", "--cors", "*", "--enable-api", "--debug", "--model", "models/20240502-172537-maroon-differential.tar.gz"]
     restart: always
@@ -61,3 +62,4 @@ services:
 networks:
   rasax_network:
     driver: bridge
+
