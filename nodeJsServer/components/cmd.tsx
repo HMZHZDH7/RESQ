@@ -40,7 +40,7 @@ export default function Cmd({ className }: { className?: string }) {
                 <div className="font-bold">Console</div>
             </div>
             <div ref={commandsContainerRef} className="w-full flex-grow flex flex-col-reverse overflow-y-auto scroll-smooth">
-                {[...commands].reverse().map((command, index) => <CmdCommand key={index} type={command.type}>{command.content}</CmdCommand>)}
+                {[...commands].map((c, index) => ({ ...c, index })).reverse().map((command) => <CmdCommand key={command.index} type={command.type}>{command.content}</CmdCommand>)}
             </div>
             <div className="flex items-center gap-[4px]">
                 <span>$</span>

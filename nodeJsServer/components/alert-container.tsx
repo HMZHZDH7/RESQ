@@ -55,9 +55,9 @@ const UrlAlertReader = () => {
     }, []);
 
     return (
-        <div className="fixed right-[20px] bottom-[20px] flex flex-col-reverse gap-[10px]">
+        <div className="fixed right-[20px] bottom-[20px] w-[400px] flex flex-col-reverse gap-[10px]">
             {alerts.map((alert, index) => (
-                <Alert key={index} message={alert.message} type={alert.type} id={alert.id as string} alertFinished={removeAlert} />
+                <Alert key={alert.id} message={alert.message} type={alert.type} id={alert.id as string} alertFinished={removeAlert} />
             ))}
         </div>
     );
