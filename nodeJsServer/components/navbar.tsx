@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react";
-import GearIcon from "@/components/icons/gear";
+import { GearIcon } from "@/components/icons/gear";
 import { cn } from "@/lib/utils"; // Utility for conditional classNames
-import SvgRenderer from "@/components/svg-renderer"; // Renders SVG icons
+import { SvgRenderer } from "@/components/svg-renderer"; // Renders SVG icons
+import { ToggleInput } from "@/components/inputs/toggle-input";
 
 // Define interface for Navbar component props
 interface NavbarProps {
-    sections: ISectionData[];
+    sections: SectionModule.Data[];
 }
 
 // Navbar component with navigation links for quick section access
@@ -64,9 +65,10 @@ const Navbar = ({ sections }: NavbarProps) => {
     const handleClick = (id: string) => {
         const section = document.getElementById(id);
         const headerHeight = 113;
+        const offset = 50; //Slightly reveal the top element
         if (section) {
             const sectionTop = section.getBoundingClientRect().top + window.scrollY;
-            const offsetPosition = sectionTop - headerHeight;
+            const offsetPosition = sectionTop - headerHeight - offset;
 
             isUserScrollingRef.current = false; // Disable user scroll detection temporarily
 
@@ -75,16 +77,17 @@ const Navbar = ({ sections }: NavbarProps) => {
                 behavior: 'smooth',
             });
             setActiveSection(id); // Set clicked section as active
+            document.getElementById(`nav-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     };
 
     return (
-        <div className="fixed left-[20px] top-0 w-[440px] h-screen flex flex-col items-center justify-center pt-[113px] pb-[50px]">
+        <div className="fixed left-[20px] top-0 w-[440px] h-screen flex flex-col items-center justify-center pt-[113px] pb-[50px] z-40">
             <div className="w-full h-full rounded-[15px] flex flex-col items-center gap-[30px] px-[38px] py-[24px] bg-primary shadow-[0px_3.5px_5.5px_0px_rgba(0,_0,_0,_0.02)]">
 
                 <div className="w-full rounded-[15px] flex flex-col items-center gap-[5px] py-[10px] bg-[#09101b66]">
                     <p className="text-xl text-background font-bold">Number of patients:</p>
-                    <p className="text-4xl text-background font-bold">2400</p>
+                    <p className="text-4xl text-background font-bold">4500</p>
                 </div>
 
                 <div className="w-full rounded-[15px] flex flex-col items-center gap-[5px] py-[10px] bg-[#09101b66]">
@@ -93,8 +96,7 @@ const Navbar = ({ sections }: NavbarProps) => {
                         <p className="text-xl text-background font-bold">Settings</p>
                     </div>
                     <div className="flex items-center justify-center gap-[10px]">
-                        <p className="text-background font-bold">Show only graphs with warning</p>
-                        <p>switch</p>
+                        <ToggleInput label="Show only below national value" className="flex-row-reverse" labelClassName="text-background font-bold" />
                     </div>
                 </div>
 
@@ -128,4 +130,4 @@ const Navbar = ({ sections }: NavbarProps) => {
     );
 };
 
-export default Navbar;
+export { Navbar };

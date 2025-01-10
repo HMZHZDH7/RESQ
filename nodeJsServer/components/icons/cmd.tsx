@@ -21,4 +21,4 @@ const CmdIcon = ({
     );
 };
 
-export default CmdIcon;
+export { CmdIcon };

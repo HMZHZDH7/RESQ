@@ -6,4 +6,4 @@ const ChatMessage = ({ children, type }: { children: React.ReactNode; type: "ser
     </div>;
 };
 
-export default ChatMessage;
+export { ChatMessage };

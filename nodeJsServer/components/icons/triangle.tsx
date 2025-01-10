@@ -28,4 +28,4 @@ const TriangleIcon = ({
     );
 };
 
-export default TriangleIcon;
+export { TriangleIcon };

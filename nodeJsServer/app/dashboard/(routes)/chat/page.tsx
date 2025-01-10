@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import ChartDisplay from "@/components/chart-display";
-import ChartHistory from "@/components/chart-history";
-import Chatbot from "@/components/chatbot";
-import Cmd from "@/components/cmd";
+import { ChartDisplay } from "@/components/chart-display";
+import { ChartHistory } from "@/components/chart-history";
+import { Chatbot } from "@/components/chatbot";
+import { Cmd } from "@/components/cmd";
 import { WebSocketProvider } from '@/components/contexts/WebSocketContext';
-import getSession from "@/lib/auth/getSession";
+import { getSession } from "@/lib/auth/getSession";
 
 export const metadata: Metadata = {
     title: "Chatbot - RESQ Dashboard",

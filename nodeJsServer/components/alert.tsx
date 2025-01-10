@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import TriangleIcon from "@/components/icons/triangle";
-import SuccessIcon from "@/components/icons/success";
-import InfoIcon from "@/components/icons/info";
+import { TriangleIcon } from "@/components/icons/triangle";
+import { SuccessIcon } from "@/components/icons/success";
+import { InfoIcon } from "@/components/icons/info";
 import { cn } from "@/lib/utils";
 
 interface AlertProps {
@@ -24,11 +24,11 @@ const Alert = ({ message, type, alertFinished, id }: AlertProps) => {
         switch (type) {
             case "danger":
             case "warning":
-                return <TriangleIcon width={16} height={16} />;
+                return <TriangleIcon width={16} height={16} className="flex-shrink-0" />;
             case "success":
-                return <SuccessIcon width={16} height={16} />;
+                return <SuccessIcon width={16} height={16} className="flex-shrink-0" />;
             default:
-                return <InfoIcon width={16} height={16} />;
+                return <InfoIcon width={16} height={16} className="flex-shrink-0" />;
         }
     };
 
@@ -60,7 +60,7 @@ const Alert = ({ message, type, alertFinished, id }: AlertProps) => {
         <div
             ref={alertRef}
             className={cn(
-                "flex items-center px-[17px] gap-[8px] w-full h-[58px] border rounded-[6px] duration-300 ease-in-out",
+                "flex items-center p-[16px] gap-[12px] w-full min-h-[58px] border rounded-[6px] duration-300 ease-in-out",
                 type === "danger" ? "bg-[#F8D7DA] border-[#F1AEB5] text-[#58151C] fill-[#58151C]" :
                     type === "warning" ? "bg-[#FFF3CD] border-[#FFE69C] text-[#664D03] fill-[#664D03]" :
                         type === "success" ? "bg-[#D1E7DD] border-[#A3CFBB] text-[#0A3622] fill-[#0A3622]" :
@@ -77,4 +77,4 @@ const Alert = ({ message, type, alertFinished, id }: AlertProps) => {
     );
 };
 
-export default Alert;
+export { Alert };

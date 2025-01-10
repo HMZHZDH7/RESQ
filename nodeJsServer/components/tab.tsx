@@ -33,4 +33,4 @@ const Tab = ({ text, link, icon }: { text: string; link: string; icon: React.Rea
     </Container>;
 };
 
-export default Tab;
+export { Tab };

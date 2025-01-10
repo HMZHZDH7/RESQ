@@ -1,5 +1,5 @@
 import express from "express";
-import User from "../../../lib/db/models/user";
+import { User } from "../../../lib/db/models/user";
 import { createPassword } from "../../../lib/auth/passwordGestion";
 
 const register = express.Router();
@@ -11,10 +11,10 @@ register.post("/", async (req, res, next) => {
         !req.body.confirmPassword ||
         req.body.password != req.body.confirmPassword
     )
-        return res.redirect("/register?a=1");
+        return res.redirect("/register?a=3");
 
     if (await User.findOne({ username: req.body.username }))
-        return res.redirect("/register?a=2");
+        return res.redirect("/register?a=4");
 
     const { salt, hash } = createPassword(req.body.password);
 

@@ -5,8 +5,12 @@ import path from 'path';
 const RASA_URL = 'http://localhost:5005/webhooks/rest/webhook';
 const ACTION_URL = 'http://localhost:5055/webhook';
 
-//One file per client to solve concurrency problems
-// Function to setup logging for a user
+/**
+ * Ensures the setup for logging a specific user. Creates a unique log file per user.
+ * This avoids concurrency issues by isolating log files per client.
+ * @param userId - Unique identifier for the user.
+ * @returns Path to the log file.
+ */
 function setupLogging(userId: string) {
   // Create logs directory if it doesn't exist
   const logsDir = path.join(process.cwd(), 'logs');
@@ -22,21 +26,23 @@ function setupLogging(userId: string) {
   return logFilePath;
 }
 
-//Function to log a UserInteraction (User + Rasa)
+/**
+ * Logs a user's interaction (messages and Rasa responses) into a file.
+ * @param fileHandle - Path to the log file.
+ * @param userTimestamp - Timestamp of the user's message.
+ * @param userMessage - The message sent by the user.
+ * @param rasaTimestamp - Timestamp of the Rasa's response.
+ * @param rasaResponse - Rasa's response object.
+ */
 function logInteraction(
   fileHandle: string,
   userTimestamp: string,
   userMessage: string,
   rasaTimestamp: string,
-  rasaResponse: {
-    message: { str: string; srv: boolean; }[];
-    data?: {
-      data?: { file_content: string };
-      args?: { file_content: string }
-    }
-  }) {
+  rasaResponse: Rasa.Response
+) {
 
-  const logEntries = [];
+  const logEntries: Rasa.UserInteractionLog[] = [];
 
   // User message log entry
   logEntries.push({ timestamp: userTimestamp, message: { str: userMessage, srv: false } });
@@ -71,7 +77,12 @@ function logInteraction(
   fs.writeFileSync(fileHandle, JSON.stringify(logArray, null, 2));
 }
 
-//Function to log a single entry
+/**
+ * Logs a single entry to a user's log file.
+ * @param fileHandle - Path to the log file.
+ * @param message - Message content.
+ * @param isServer - Indicates whether the message is from the server.
+ */
 function logSingleEntry(fileHandle: string, message: string, isServer: boolean) {
   const timestamp = new Date().toISOString();
   const logEntry = {
@@ -95,7 +106,10 @@ function logSingleEntry(fileHandle: string, message: string, isServer: boolean) 
   fs.writeFileSync(fileHandle, JSON.stringify(logArray, null, 2));
 }
 
-//Fetch the online clients UUID
+/**
+ * Fetches the list of logged-in users by inspecting the logs directory.
+ * @returns Array of user IDs.
+ */
 function getUserLoggedList() {
   const logsDir = path.join(process.cwd(), 'logs');
   if (!fs.existsSync(logsDir)) {
@@ -106,21 +120,15 @@ function getUserLoggedList() {
   return files.map(file => path.basename(file, '.json'));
 }
 
-//Parse the logs json into a message frame for the user
+/**
+ * Parses log entries to construct a message frame for the user.
+ * @param logs - Array of user interaction logs.
+ * @returns A parsed frame containing messages and additional data.
+ */
 function parseLogsToSend(
-  logs: {
-    timestamp: string;
-    message?: {
-      str: string;
-      srv: boolean;
-    };
-    data?: {
-      data: string | null;
-      args: string | null
-    }
-  }[]
+  logs: Rasa.UserInteractionLog[]
 ) {
-  const messageLogs = logs.filter(log => log.message !== undefined).map(log => log.message);
+  const messageLogs = logs.filter((log) => log.message !== undefined).map(log => log.message) as { str: string, srv: boolean }[];
 
   const dataMap = logs.reduce((acc, log) => {
     if (log.data) {
@@ -132,7 +140,7 @@ function parseLogsToSend(
       }
     }
     return acc;
-  }, { data: null as string | null, args: null as string | null });
+  }, { data: undefined as string | undefined, args: undefined as string | undefined });
 
   return {
     message: messageLogs,
@@ -140,8 +148,13 @@ function parseLogsToSend(
   };
 }
 
-//Request on Rasa and Parsing Message
-function sendMessageToRasa(message: string, userId: string) {
+/**
+ * Sends a message to the Rasa server and formats the response.
+ * @param message - Message to send.
+ * @param userId - Sender's unique identifier.
+ * @returns Promise resolving to a formatted Rasa response.
+ */
+async function sendMessageToRasa(message: string, userId: string) {
   return fetch(RASA_URL, {
     method: 'POST',
     headers: {
@@ -152,7 +165,7 @@ function sendMessageToRasa(message: string, userId: string) {
     .then(response => response.json())
     .then(data => {
       //For each element, pushing string message and args/data json
-      const formattedResponse: { message: { str: string; srv: boolean }[]; data: any } = { message: [], data: {} };
+      const formattedResponse: Rasa.Response = { message: [], data: {} };
       data.forEach((item: any) => {
         if (item.text) {
           formattedResponse.message.push({ str: item.text, srv: true });
@@ -169,7 +182,11 @@ function sendMessageToRasa(message: string, userId: string) {
     });
 }
 
-//Parse the command string into a JSON fot the triggerAction
+/**
+ * Parses a command string into an action and slots.
+ * @param command - Command string in a predefined format.
+ * @returns An object containing the action and slots.
+ */
 function parseCommand(command: string) {
   const parts = command.trim().split(/\s+/);
   if (parts.length < 1) {
@@ -190,8 +207,13 @@ function parseCommand(command: string) {
   return { action, slots };
 }
 
-//Send a Frame like RASA for the Action server
-function triggerAction(nextAction: string, slot: Record<string, string>) {
+/**
+ * Triggers a custom action on the Rasa action server.
+ * @param nextAction - The name of the action to trigger.
+ * @param slot - Slots required for the action.
+ * @returns Promise resolving to the server response.
+ */
+async function triggerAction(nextAction: string, slot: Record<string, string>) {
   const payload = {
     next_action: nextAction,
     tracker: {

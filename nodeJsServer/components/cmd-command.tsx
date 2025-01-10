@@ -8,4 +8,4 @@ const CmdCommand = ({ children, type }: { children: React.ReactNode; type: "serv
     )}>{type === "client" && <span>{"[Admin]$"}</span>}<div>{children}</div></div>;
 };
 
-export default CmdCommand;
+export { CmdCommand };

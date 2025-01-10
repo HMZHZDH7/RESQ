@@ -1,6 +1,13 @@
+"use server";
 import { cookies } from "next/headers";
-import Session, { ISession } from "../db/models/session";
+import { Session, ISession } from "@/lib/db/models/session";
 
+/**
+ * Retrieves the current session by reading the sessionId cookie, 
+ * extracting the sessionId, and then fetching the session from the database.
+ * 
+ * @returns {Promise<any | null>} The user object if the session is found, or null if not.
+ */
 async function getSession() {
     const sessionId = cookies()
         .get("sessionId")
@@ -10,4 +17,4 @@ async function getSession() {
     return session ? session.session.passport.user : null;
 }
 
-export default getSession;
+export { getSession };

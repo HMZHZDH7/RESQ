@@ -28,4 +28,4 @@ const SuccessIcon = ({
     );
 };
 
-export default SuccessIcon;
+export { SuccessIcon };

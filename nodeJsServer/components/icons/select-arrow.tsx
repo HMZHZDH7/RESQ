@@ -16,9 +16,9 @@ const SelectArrowIcon = ({
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
         >
-            <path d="M7.66669 1.00001H0.333354L4.00002 7.33334" fill="#A0AEC0" />
+            <path d="M7.66669 1.00001H0.333354L4.00002 7.33334" />
         </svg>
     );
 };
 
-export default SelectArrowIcon;
+export { SelectArrowIcon };

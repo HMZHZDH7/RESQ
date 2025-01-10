@@ -1,12 +1,12 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
-import WebSocketContext from '@/components/contexts/WebSocketContext';
-import CmdCommand from "@/components/cmd-command";
+import { WebSocketContext } from '@/components/contexts/WebSocketContext';
+import { CmdCommand } from "@/components/cmd-command";
 import { cn } from "@/lib/utils";
-import CmdIcon from "@/components/icons/cmd";
+import { CmdIcon } from "@/components/icons/cmd";
 
-export default function Cmd({ className }: { className?: string }) {
+export function Cmd({ className }: { className?: string }) {
     const { commands, sendCommand } = useContext(WebSocketContext);
     const [isShowed, setIsShowed] = useState<boolean>(false);
 

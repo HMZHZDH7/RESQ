@@ -1,7 +1,7 @@
-import Tab from "@/components/tab";
-import DashboardIcon from "@/components/icons/dashboard";
-import ChatbotIcon from "@/components/icons/chatbot";
-import LogoutIcon from "@/components/icons/logout";
+import { Tab } from "@/components/tab";
+import { DashboardIcon } from "@/components/icons/dashboard";
+import { ChatbotIcon } from "@/components/icons/chatbot";
+import { LogoutIcon } from "@/components/icons/logout";
 import Link from "next/link";
 import { Img } from "@/components/img";
 
@@ -19,7 +19,7 @@ const tabs = [
 ];
 
 const Header = () => {
-    return <div className="flex w-full h-[63px] bg-gray-light px-[60px] sticky top-0 z-10 items-center justify-between">
+    return <div className="flex w-full h-[63px] bg-gray-light px-[60px] fixed top-0 z-50 items-center justify-between">
         <div className="h-full flex pt-[13px]">
             {
                 tabs.map(t => (
@@ -36,4 +36,4 @@ const Header = () => {
     </div>
 };
 
-export default Header;
+export { Header };

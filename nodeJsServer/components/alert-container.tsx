@@ -1,25 +1,16 @@
 "use client";
 
-import { useEffect, useContext, useState, useRef, createRef } from "react";
-import AlertContext from '@/components/contexts/AlertContext';
-import Alert from "@/components/alert";
+import { useEffect, useContext, useState } from "react";
+import { AlertContext } from '@/components/contexts/AlertContext';
+import { Alert } from "@/components/alert";
 
-interface IAlert {
-    message: string;
-    type: "info" | "success" | "warning" | "danger";
-    id?: string; // Alerts may include an optional `id` for unique identification, which is necessary for handling multiple alerts.
-}
-
-// Listener functions can receive a single alert or an array of alerts.
-type NewAlertListenerFunc = (alert: IAlert | IAlert[]) => void;
-
-const UrlAlertReader = () => {
+const AlertContainer = () => {
     const { addNewAlertListener, deleteNewAlertListener } = useContext(AlertContext);
 
     // State to store active alerts displayed in the UI
-    const [alerts, setAlerts] = useState<IAlert[]>([]);
+    const [alerts, setAlerts] = useState<AlertModule.Alert[]>([]);
 
-    const addAlert = (alert: IAlert) => {
+    const addAlert = (alert: AlertModule.Alert) => {
         // Generates a unique `id` using the current timestamp and a random number.
         const id = `${Date.now()}-${Math.random()}`;
         const newAlert = { ...alert, id };
@@ -33,7 +24,7 @@ const UrlAlertReader = () => {
         setAlerts((prev) => prev.filter((a) => a.id !== id));
     };
 
-    const alertListener: NewAlertListenerFunc = (alert) => {
+    const alertListener: AlertModule.ListenerFunc = (alert) => {
         if (Array.isArray(alert)) {
             // Handles multiple alerts by adding each one individually.
             alert.forEach(addAlert);
@@ -55,12 +46,12 @@ const UrlAlertReader = () => {
     }, []);
 
     return (
-        <div className="fixed right-[20px] bottom-[20px] w-[400px] flex flex-col-reverse gap-[10px]">
-            {alerts.map((alert, index) => (
+        <div className="fixed right-[20px] bottom-[20px] w-[400px] flex flex-col-reverse gap-[10px] z-50">
+            {alerts.map((alert) => (
                 <Alert key={alert.id} message={alert.message} type={alert.type} id={alert.id as string} alertFinished={removeAlert} />
             ))}
         </div>
     );
 };
 
-export default UrlAlertReader;
+export { AlertContainer };

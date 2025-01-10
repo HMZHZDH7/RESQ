@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Button } from "@/components/button";
-import { Input } from "@/components/input";
-import { ToggleInput } from "@/components/toggle-input";
-import Link from "@/components/link";
+import { Input } from "@/components/inputs/input";
+import { ToggleInput } from "@/components/inputs/toggle-input";
+import { CustomLink as Link } from "@/components/link";
 import { Form } from "@/components/form";
 import { Img } from "@/components/img";
 

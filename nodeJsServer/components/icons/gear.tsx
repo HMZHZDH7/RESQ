@@ -21,4 +21,4 @@ const GearIcon = ({
     );
 };
 
-export default GearIcon;
+export { GearIcon };

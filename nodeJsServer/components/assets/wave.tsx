@@ -17,4 +17,4 @@ const WaveAsset = ({
     );
 };
 
-export default WaveAsset;
+export { WaveAsset };

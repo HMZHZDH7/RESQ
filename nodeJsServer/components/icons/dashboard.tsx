@@ -21,4 +21,4 @@ const DashboardIcon = ({
     );
 };
 
-export default DashboardIcon;
+export { DashboardIcon };

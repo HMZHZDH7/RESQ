@@ -1,19 +1,11 @@
 "use client";
 import { createContext, ReactNode, useRef } from 'react';
 
-// Defines the structure of an alert object, specifying its message and type (limited to specific strings).
-interface IAlert {
-    message: string;
-    type: "info" | "success" | "warning" | "danger";
-};
-
-// Represents the type of functions that can act as listeners, which receive either a single alert or an array of alerts.
-type NewAlertListenerFunc = (alert: IAlert | IAlert[]) => void;
 
 type AlertContextType = {
-    addNewAlert: (alert: IAlert) => void;
-    addNewAlertListener: (func: NewAlertListenerFunc) => void;
-    deleteNewAlertListener: (func: NewAlertListenerFunc) => void;
+    addNewAlert: (alert: AlertModule.Alert) => void;
+    addNewAlertListener: (func: AlertModule.ListenerFunc) => void;
+    deleteNewAlertListener: (func: AlertModule.ListenerFunc) => void;
 };
 
 const AlertContext = createContext<AlertContextType>({
@@ -25,12 +17,12 @@ const AlertContext = createContext<AlertContextType>({
 export const AlertProvider = ({ children }: { children: ReactNode }) => {
 
     // A `Set` to hold all alert listener functions.
-    const alertListeners = useRef<Set<NewAlertListenerFunc>>(new Set());
+    const alertListeners = useRef<Set<AlertModule.ListenerFunc>>(new Set());
 
     // A cache to temporarily store alerts when no listeners are registered.
-    const alertsCache = useRef<IAlert[]>([]);
+    const alertsCache = useRef<AlertModule.Alert[]>([]);
 
-    function addNewAlert(alert: IAlert) {
+    function addNewAlert(alert: AlertModule.Alert) {
         if (alertListeners.current.size > 0) {
             // If there are listeners, notify them about the new alert.
             alertListeners.current.forEach(listener => listener(alert));
@@ -40,7 +32,7 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
         };
     };
 
-    function addNewAlertListener(func: NewAlertListenerFunc) {
+    function addNewAlertListener(func: AlertModule.ListenerFunc) {
         // Adds a new listener to the set of alert listeners.
         alertListeners.current.add(func);
         if (alertsCache.current.length === 1) {
@@ -51,7 +43,7 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
         };
     };
 
-    function deleteNewAlertListener(func: NewAlertListenerFunc) {
+    function deleteNewAlertListener(func: AlertModule.ListenerFunc) {
         // Removes a listener from the set of alert listeners.
         alertListeners.current.delete(func);
     };
@@ -63,4 +55,4 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
     );
 };
 
-export default AlertContext;
+export { AlertContext };

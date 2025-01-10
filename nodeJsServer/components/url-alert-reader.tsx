@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useContext } from "react";
-import AlertContext from '@/components/contexts/AlertContext';
+import { AlertContext } from '@/components/contexts/AlertContext';
 import { useSearchParams } from 'next/navigation';
 
 const UrlAlertReader = () => {
@@ -27,4 +27,4 @@ const UrlAlertReader = () => {
     return (null);
 };
 
-export default UrlAlertReader;
+export { UrlAlertReader };

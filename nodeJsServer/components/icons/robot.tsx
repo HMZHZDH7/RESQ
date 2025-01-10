@@ -21,4 +21,4 @@ const RobotIcon = ({
     );
 };
 
-export default RobotIcon;
+export { RobotIcon };

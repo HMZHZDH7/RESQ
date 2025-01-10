@@ -26,4 +26,4 @@ const CustomLink = ({
     );
 };
 
-export default CustomLink;
+export { CustomLink };

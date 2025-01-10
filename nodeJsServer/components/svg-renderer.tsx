@@ -42,4 +42,4 @@ const SvgRenderer = ({ svgContent, width, height, className = "" }: { svgContent
   );
 };
 
-export default SvgRenderer;
+export { SvgRenderer };

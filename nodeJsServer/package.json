@@ -6,12 +6,12 @@
     "dev": "nodemon",
     "build": "next build && tsc --project tsconfig.server.json",
     "start": "NODE_ENV=production node dist/server/server.js",
-    "edit-admin":"ts-node --project tsconfig.server.json edit-admin.ts",
-    "lint": "next lint"
+    "edit-admin": "ts-node --project tsconfig.server.json edit-admin.ts",
+    "check-types": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "description": "",
   "dependencies": {
     "@splidejs/react-splide": "^0.7.12",
@@ -21,6 +21,7 @@
     "clsx": "^2.1.0",
     "connect-mongo": "^5.1.0",
     "cookie-parser": "^1.4.7",
+    "csv-parser": "^3.1.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-session": "^1.18.0",

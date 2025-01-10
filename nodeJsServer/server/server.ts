@@ -1,6 +1,12 @@
 import dotenv from "dotenv";
 dotenv.config(); // Load environment variables from a .env file
 
+/**
+ * Validates the `NEXT_PUBLIC_BASE_PATH` environment variable if provided.
+ * 
+ * Ensures that the base path follows a valid pattern (e.g., `/api/v1`).
+ * Throws an error if the base path is invalid.
+ */
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ? process.env.NEXT_PUBLIC_BASE_PATH.toLowerCase() : undefined;
 
 if (basePath) {
@@ -19,12 +25,16 @@ import helmet from "helmet";
 const LocalStrategy = passportLocal.Strategy;
 
 // Import user model for authentication and session handling
-import User, { IUser } from "../lib/db/models/user";
+import { User, IUser } from "../lib/db/models/user";
 
 // Connect to MongoDB using Mongoose
 import MongoStore from "connect-mongo";
 import mongoose from "mongoose";
 
+/**
+ * Throws an error if the MONGODB_URI environment variable is missing.
+ * Connects to MongoDB using Mongoose with the provided URI.
+ */
 if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI environment variable is missing");
 mongoose.connect(process.env.MONGODB_URI); // Establish a database connection with MongoDB URI
 
@@ -40,7 +50,10 @@ const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
-// Prepare the Next.js application and start the Express server
+/**
+ * Prepare the Next.js application and start the Express server.
+ * - Initializes the app, configures the server, sets up routes, and starts listening for requests.
+ */
 app.prepare()
     .then(() => {
         if (!process.env.AUTH_SECRET) throw new Error("AUTH_SECRET environment variable is missing");
@@ -50,7 +63,11 @@ app.prepare()
         server.use(bodyParser.json());
         server.use(bodyParser.urlencoded({ extended: true }));
 
-        // Configure session middleware with MongoDB storage
+        /**
+         * Configure session middleware with MongoDB storage.
+         * - Session data will be stored in MongoDB with a session ID.
+         * - Encrypts session ID using the provided `AUTH_SECRET`.
+         */
         server.use(
             session({
                 secret: process.env.AUTH_SECRET, // Secret for encrypting session ID
@@ -67,11 +84,18 @@ app.prepare()
             })
         );
 
-        // Set up the local authentication strategy using Passport
+        /**
+        * Set up the local authentication strategy using Passport.
+        * - Uses `LocalStrategy` and `authenticate` function for login.
+        */
         const strategy = new LocalStrategy(authenticate);
         passport.use(strategy);
 
-        // Serialize user information to save in session
+        /**
+         * Serialize user information to save in the session.
+         * - If the user is a "guest", saves a special session value.
+         * - Otherwise, saves the user's ID and role.
+         */
         //@ts-ignore
         passport.serializeUser((user: IUser, cb) => {
             user.username === "guest" ? cb(null, { userId: "-1", role: "guest" }) :
@@ -81,7 +105,11 @@ app.prepare()
                 });
         });
 
-        // Deserialize user information from session
+        /**
+         * Deserialize user information from session and retrieve user data.
+         * - If the user is a "guest", the deserialized session is initialized as a guest.
+         * - Otherwise, fetches the user from the database using the user ID.
+         */
         passport.deserializeUser((session: { userId: string, username: string }, cb) => {
             session.userId === "-1" ? cb(null, { userId: session.userId, username: "Guest", role: "guest" }) :
                 User.findById(session.userId)
@@ -93,10 +121,16 @@ app.prepare()
         server.use(passport.initialize());
         server.use(passport.session());
 
-        // Add security headers with Helmet, and disabling CSP for Next.js
+        /**
+         * Add security headers with Helmet.
+         * - Disables content security policy (CSP) for Next.js compatibility.
+         */
         server.use(helmet({
             contentSecurityPolicy: false,
         }));
+
+        // Disable the 'x-powered-by' header for security reasons
+        server.disable('x-powered-by');
 
         // Set up routes for API and other server endpoints
         setupRoutes(server);
@@ -107,7 +141,10 @@ app.prepare()
             return handle(req, res);
         });
 
-        // Start the server
+        /**
+         * Start the Express server and listen for requests.
+         * - The server listens on the specified port, defaulting to 3000.
+         */
         const port = process.env.PORT && !isNaN(Number(process.env.PORT)) ? Number(process.env.PORT) : 3000;
         let httpServer = server.listen(port, () => {
             console.log(`> Ready on http://localhost:${port}`);

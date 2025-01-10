@@ -1,24 +1,38 @@
 import mongoose, { ObjectId } from "mongoose";
 const Schema = mongoose.Schema;
 
+/**
+ * Interface representing a user document in MongoDB.
+ * @interface IUser
+ * @extends {mongoose.Document}
+ */
 export interface IUser extends mongoose.Document {
-    _id: ObjectId;
-    username: string;
-    role: "guest" | "user" | "admin";
-    salt: string;
-    hash: string;
+    _id: ObjectId; // The unique identifier for the user document
+    username: string; // The user's username
+    role: "guest" | "user" | "admin"; // The role of the user, which can be one of "guest", "user", or "admin"
+    salt: string; // The salt used for password hashing
+    hash: string; // The hashed password
 }
 
-const UserSchema = new Schema<IUser>({
+/**
+ * Schema for creating user documents in MongoDB.
+ * @type {mongoose.Schema<IUser>}
+ */
+const UserSchema: mongoose.Schema<IUser> = new Schema<IUser>({
     username: {
         type: String,
-        unique: true,
+        unique: true, // Ensures each username is unique
     },
     role: String,
     salt: String,
     hash: String,
 });
 
-const UserModel = (mongoose.models.user as mongoose.Model<IUser>) || mongoose.model<IUser>("user", UserSchema);
+/**
+ * User model representing the 'user' collection in the MongoDB database.
+ * It ensures we can interact with the 'user' collection and query or modify user data.
+ * @type {mongoose.Model<IUser>}
+ */
+const UserModel: mongoose.Model<IUser> = (mongoose.models.user as mongoose.Model<IUser>) || mongoose.model<IUser>("user", UserSchema);
 
-export default UserModel;
+export { UserModel as User };

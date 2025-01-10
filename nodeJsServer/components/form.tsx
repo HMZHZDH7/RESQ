@@ -1,6 +1,5 @@
 import { forwardRef } from "react";
 
-
 const Form = forwardRef<HTMLFormElement, React.FormHTMLAttributes<HTMLFormElement>>(
     ({ action, ...props }, ref) => {
         return (

@@ -33,4 +33,4 @@ const InfoIcon = ({
     );
 };
 
-export default InfoIcon;
+export { InfoIcon };

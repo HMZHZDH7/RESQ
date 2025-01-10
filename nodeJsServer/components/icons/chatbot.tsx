@@ -21,4 +21,4 @@ const ChatbotIcon = ({
     );
 };
 
-export default ChatbotIcon;
+export { ChatbotIcon };

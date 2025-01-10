@@ -1,6 +1,6 @@
 "use client";
 import { useContext } from 'react';
-import WebSocketContext from '@/components/contexts/WebSocketContext';
+import { WebSocketContext } from '@/components/contexts/WebSocketContext';
 import { cn } from '@/lib/utils';
 
 const ChartHistory = () => {
@@ -12,7 +12,7 @@ const ChartHistory = () => {
                     key={index}
                     src={chart.image}
                     alt={`Chart ${index}`}
-                    className={cn("h-full w-auto object-contain rounded-[4px]", chart === currentChart && "shadow-[0px_0px_6px_0px_#4C98FA]")}
+                    className={cn("h-full w-auto object-contain rounded-[4px] cursor-pointer", chart === currentChart && "shadow-[0px_0px_6px_0px_#4C98FA]")}
                     onClick={() => setChartFromHistory(chart)}
                 />
             ))}
@@ -21,4 +21,4 @@ const ChartHistory = () => {
     </div>
 };
 
-export default ChartHistory;
+export { ChartHistory };

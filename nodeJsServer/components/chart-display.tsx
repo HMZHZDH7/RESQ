@@ -1,7 +1,34 @@
 "use client";
 import { useEffect, useRef, useContext } from 'react';
-import WebSocketContext from '@/components/contexts/WebSocketContext';
-import { Chart } from 'chart.js/auto';
+import { WebSocketContext } from '@/components/contexts/WebSocketContext';
+import { Chart, ChartTypeRegistry } from 'chart.js/auto';
+
+type ChatbotChart = {
+    data: {
+        YQ: string;
+        Value: number;
+    }[];
+    args: {
+        visualization: {
+            show_nat_val: false;
+            type: keyof ChartTypeRegistry;
+        };
+    };
+    image?: string;
+} | {
+    data: {
+        YQ: string;
+        Value: number;
+        nat_value: number;
+    }[];
+    args: {
+        visualization: {
+            show_nat_val: true;
+            type: keyof ChartTypeRegistry;
+        };
+    };
+    image?: string;
+};
 
 const ChartDisplay = ({ className }: { className?: string }) => {
     const { currentChart, setImageForChart } = useContext(WebSocketContext);
@@ -12,10 +39,8 @@ const ChartDisplay = ({ className }: { className?: string }) => {
     useEffect(() => {
         if (!currentChart || !chartRef.current) return;
 
-        const { data, args } = currentChart;
-
-        const labels = data.map((i: any) => i.YQ);
-        const values = data.map((i: any) => i.Value);
+        const labels = currentChart.data.map((i) => i.YQ);
+        const values = currentChart.data.map((i) => i.Value);
 
         const chartData = {
             labels,
@@ -29,8 +54,8 @@ const ChartDisplay = ({ className }: { className?: string }) => {
             }]
         };
 
-        if (args.visualization.show_nat_val === true) {
-            const nat_values = data.map((i: any) => i.nat_value);
+        if (currentChart.args.visualization.show_nat_val === true) {
+            const nat_values = (currentChart as Extract<ChatbotChart, { args: { visualization: { show_nat_val: true } } }>).data.map((i) => i.nat_value);
             chartData.datasets.push({
                 label: 'National median',
                 data: nat_values,
@@ -51,7 +76,7 @@ const ChartDisplay = ({ className }: { className?: string }) => {
         };
 
         chartInstanceRef.current = new Chart(chartRef.current, {
-            type: args.visualization.type,
+            type: currentChart.args.visualization.type,
             data: chartData,
             options: {
                 scales: {
@@ -98,4 +123,4 @@ const ChartDisplay = ({ className }: { className?: string }) => {
     </div>
 };
 
-export default ChartDisplay;
+export { ChartDisplay };
