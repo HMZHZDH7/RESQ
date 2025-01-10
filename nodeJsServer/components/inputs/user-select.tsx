@@ -64,12 +64,12 @@ const UserSelect = ({ options, value, onChange, placeholder = "Select an element
     };
 
     const handleOptionClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, optionValue: string) => {
+        closeDropdown();
         if (onChange) {
             onChange(optionValue);
             if (onChangeHandleValueChange) return;
         };
         setSelectedValue(value);
-        closeDropdown();
     };
 
     const handleWindowClick = (event: MouseEvent) => {

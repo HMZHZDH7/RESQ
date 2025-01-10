@@ -47,8 +47,8 @@ const Select = (
         };
 
         const handleOptionClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, optionValue: string) => {
-            setNewValue(optionValue);
             closeDropdown();
+            setNewValue(optionValue);
         };
 
         const handleWindowClick = (event: MouseEvent) => {

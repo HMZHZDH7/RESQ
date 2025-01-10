@@ -71,8 +71,8 @@ const YearQuarterInput = ({ value, onChange, onChangeHandleValueChange = false }
 
     const handleQuarterClick = (quarter: number) => {
         tempValue.current.quarter = quarter + 1;
-        setNewValue(tempValue.current);
         closeDropdown();
+        setNewValue(tempValue.current);
     };
 
     const handleIconClick = () => {
