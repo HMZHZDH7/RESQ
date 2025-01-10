@@ -33,8 +33,9 @@ const ChartClient = ({ categoryName, chartSettings, filters, ...props }: ChartCl
 
         setError(null);
         setIsLoading(true);
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH ? process.env.NEXT_PUBLIC_BASE_PATH.toLowerCase() : "";
         fetch(
-            `/api/data/${categoryName.toLowerCase()}/${chartSettings.variableName.toLowerCase()}`,
+            `${basePath}/api/data/${categoryName.toLowerCase()}/${chartSettings.variableName.toLowerCase()}`,
             {
                 signal: controller.signal,
                 method: "POST",
