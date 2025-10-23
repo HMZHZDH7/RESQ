@@ -98,7 +98,7 @@ export const SECTIONS: SectionModule.Data[] = ([
             { label: "% IVT+MT of all ischemic strokes", type: "trend", variableName: "", variableType: "categorical_binary", aggregationType: "percentage" },
             { label: "Door-to-groin for MT", type: "trend", variableName: "door_to_groin", variableType: "quantitative", aggregationType: "median" },
             { label: "Door-to-groin for MT, median. Drip-and-ship (secondary transport)", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "median" },
-            { label: "Door-in-door-out, median. For PSC, transport to CSC for MT", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "median" },
+            { label: "Door-in-door-out, median. For PSC, transport to CSC for MT", type: "trend", variableName: "door_in_door_out", variableType: "quantitative", aggregationType: "median" },
             { label: "TICI scores", type: "stacked_bargraph", variableName: "tici_score", variableType: "categorical", aggregationType: "percentage" },
             { label: "Bleeding after IVT/MT", type: "stacked_bargraph", variableName: "", variableType: "categorical", aggregationType: "percentage" },
             { label: "Complications after MT", type: "stacked_bargraph", variableName: "", variableType: "categorical", aggregationType: "percentage" },
@@ -171,6 +171,14 @@ export const SECTIONS: SectionModule.Data[] = ([
             { label: "Stroke patients hospitalized in a dedicated stroke unit / ICU", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" }
         ],
         icon: getSvgContent("Trophy"),
+    },
+    {
+        label: "Custom variables",
+        categoryName: "custom_variables",
+        charts: [
+            {label: "", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage"}
+        ],
+        icon: getSvgContent("PencilEdit"),
     }
 ] as Omit<SectionModule.Data, "id">[])
     .map((section, index) => ({
