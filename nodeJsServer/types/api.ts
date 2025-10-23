@@ -8,8 +8,17 @@ declare global {
          */
         export interface DataResponse {
             labels: string[],
-            datasets: { label?: string, data: number[] }[]
+            datasets: { label?: string, data: number[], 
+                        significant?: "positive" | "negative" | "neutral",
+                        pValue?: number | null,
+                        evolution?: number | null,
+                        diffMedian?: number | null,
+                        pctEvolution?: string | null, }[]
+            pValue?: number | null;
+            diffMedian?: number | null;
+            pctEvolution?: string | null;
         }
+        
     }
 }
 

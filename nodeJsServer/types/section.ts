@@ -69,12 +69,18 @@ declare global {
          * @property {YearQuarterInput.YearQuarter} [secondYearQuarter] - The second year and quarter filter.
          * @property {string} [country] - The country filter.
          * @property {string} [site] - The site filter.
+         * @property {string} [variables] - The variables filter.
+         * @property {string} [comparators] - The comparators filter.
+         * @property {string} [comparisonValue] - The comparisonValue filter.
          */
         export interface Filters {
             firstYearQuarter?: YearQuarterInput.YearQuarter,
             secondYearQuarter?: YearQuarterInput.YearQuarter,
             country?: string,
-            site?: string
+            site?: string,
+            variables?: string,
+            comparators?: string,
+            comparisonValue?: string
         }
     }
 }
