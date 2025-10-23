@@ -1,6 +1,7 @@
 import express from "express";
 import fs from 'fs';
 import csv from "csv-parser";
+import jStat from "jstat";
 
 /**
  * Type definition for a single data record.
@@ -144,15 +145,17 @@ dataApi.post("/:categoryName/:variableName", (req, res) => {
         if (!(supportedDataOperations[aggregationType] ?? []).includes(variableType.toLowerCase())) return res.status(400).json({ error: "Invalid variableType parameter!" });
 
         let filteredData = (await getDataFromFile()).filter(row => row.TAB.toLowerCase() === categoryName.toLowerCase() && row.variable.toLowerCase() === variableName.toLowerCase() && row.SUMMARIZE_BY === aggregationType.toLowerCase() && row.ATTRIBUTE_TYPE.toLowerCase() === variableType.toLowerCase() && row.Value !== "");
-
+        console.log(filteredData)
+        let filteredByCountry = filteredData;
+        let filteredBySite = filteredData;
         // Apply additional filters if provided
         if (filters) {
             if (filters.country) {
-                filteredData = filteredData.filter(d => d.site_country === filters.country)
+                filteredByCountry = filteredData.filter(d => d.site_country === filters.country)
             };
 
             if (filters.country && filters.site) {
-                filteredData = filteredData.filter(d => d.site_id === filters.site);
+                filteredBySite = filteredData.filter(d => d.site_id === filters.site);
             };
 
             if (filters.firstYearQuarter && filters.secondYearQuarter) {
@@ -194,74 +197,142 @@ dataApi.post("/:categoryName/:variableName", (req, res) => {
 
         let labels: string[] = [];
         let datasets: { label?: string, data: number[] }[] = [];
+        
+        function tTest(sample1: number[], sample2: number[]): number {
+            if (sample1.length < 2 || sample2.length < 2) return 1;
+            const mean = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+            const variance = (arr: number[], m: number) => arr.reduce((a, b) => a + Math.pow(b - m, 2), 0) / (arr.length - 1);
+
+            const mean1 = mean(sample1);
+            const mean2 = mean(sample2);
+            const var1 = variance(sample1, mean1);
+            const var2 = variance(sample2, mean2);
+            const n1 = sample1.length;
+            const n2 = sample2.length;
+
+            const t = (mean1 - mean2) / Math.sqrt(var1 / n1 + var2 / n2);
+            const df = Math.pow(var1 / n1 + var2 / n2, 2) /
+                ((Math.pow(var1 / n1, 2) / (n1 - 1)) + (Math.pow(var2 / n2, 2) / (n2 - 1)));
+
+            const pValue = 2 * (1 - jStat.studentt.cdf(Math.abs(t), df));
+            return pValue;
+        }
+
         const groupedByYearQuarter = groupBy(filteredData, (o) => o.YQ);
+        const buildDatasetForFilter = (
+            data: Result[],
+            labelPrefix: string,
+            aggregationType: string,
+            labels: string[],
+            keys?: string[]
+        ): { label: string, data: number[] }[] => {
+            const grouped = groupBy(data, d => d.YQ);
+            const datasets: { label: string, data: number[] }[] = [];
 
-        // Perform the specified aggregation
-        switch (aggregationType.toLowerCase()) {
-            case "median":
-                const medianData = Object.keys(groupedByYearQuarter).reduce((acc, key) => {
-                    const values = groupedByYearQuarter[key].map(({ Value }) => parseFloat(Value));
-                    acc[key] = median(values);
-                    return acc;
-                }, {} as Record<string, number>);
-
-                labels = Object.keys(medianData).sort();
-                datasets.push({ data: labels.map(l => medianData[l]) });
-                break;
-            case "mean":
-                const meanData = Object.keys(groupedByYearQuarter).reduce((acc, key) => {
-                    const values = groupedByYearQuarter[key].map(({ Value }) => parseFloat(Value));
-                    acc[key] = mean(values);
-                    return acc;
-                }, {} as Record<string, number>);
-
-                labels = Object.keys(meanData).sort();
-                datasets.push({ data: labels.map(l => meanData[l]) });
-                break;
-            case "percentage":
-                const percentageData = Object.keys(groupedByYearQuarter).reduce((acc, key) => {
-                    const values = groupBy(groupedByYearQuarter[key], (v) => v.Value);
-                    acc[key] = Object.keys(values).reduce((acc, key) => {
-                        acc[key] = values[key].length;
-                        return acc;
-                    }, {} as Record<string, number>);
-                    return acc;
-                }, {} as Record<string, Record<string, number>>);
-
-                labels = Object.keys(percentageData).sort();
-
-                let keys: string[] = [];
-                switch (variableType.toLowerCase()) {
-                    case "categorical":
-                        keys = Array.from(new Set(labels.map(l => percentageData[l]).flatMap(Object.keys))).sort();
-                        break;
-                    case "categorical_binary":
-                        keys = ["1"];
-                        break;
-                };
+            if (aggregationType === "percentage" && keys) {
                 keys.forEach(key => {
-                    datasets.push({
-                        label: key,
-                        data: labels.map(l => percentageData[l]).map(i => {
-                            const total = Object.values(i).reduce((sum, value) => sum + (value || 0), 0);
-                            const value = i[key] ?? 0;
-                            return total > 0 ? (value / total) * 100 : 0;
-                        })
+                    const dataValues = labels.map(l => {
+                        const values = grouped[l] ?? [];
+                        const total = values.length;
+                        const count = values.filter(d => d.Value === key).length;
+                        return total > 0 ? (count / total) * 100 : 0;
                     });
+                    datasets.push({ label: `${labelPrefix} - ${key}`, data: dataValues });
                 });
-                break;
-            case "count":
-                const countData = Object.keys(groupedByYearQuarter).reduce((acc, key) => {
-                    const values = groupedByYearQuarter[key].map(({ Value }) => parseFloat(Value));
-                    acc[key] = sum(values);
-                    return acc;
-                }, {} as Record<string, number>);
+            } else {
+                const dataValues = labels.map(l => {
+                    const values = (grouped[l] ?? []).map(d => parseFloat(d.Value));
+                    if (!values.length) return 0;
+                    switch (aggregationType) {
+                        case "median": return median(values);
+                        case "mean": return mean(values);
+                        case "count": return sum(values);
+                        default: return 0;
+                    }
+                });
+                datasets.push({ label: labelPrefix, data: dataValues });
+            }
 
-                labels = Object.keys(countData).sort();
-                datasets.push({ data: labels.map(l => countData[l]) });
-                break;
+            return datasets;
         };
 
+        // Perform the specified aggregation
+        labels = Object.keys(groupedByYearQuarter).sort();
+
+        switch (aggregationType.toLowerCase()) {
+            case "median":
+            case "mean":
+            case "count":
+                if (filters?.country) datasets.push(...buildDatasetForFilter(filteredByCountry, `Country: ${filters.country}`, aggregationType, labels ));
+                if (filters?.site) datasets.push(...buildDatasetForFilter(filteredBySite, `Hospital: ${filters.site}`, aggregationType, labels ));
+                break;
+            case "percentage":
+                const percentageKeys = variableType.toLowerCase() === "categorical"
+                    ? Array.from(new Set(filteredData.map(d => d.Value))).sort()
+                    : ["1"];
+
+                if (filters?.country) datasets.push(...buildDatasetForFilter(filteredByCountry, `Country: ${filters.country}`, aggregationType, labels, percentageKeys ));
+                if (filters?.site) datasets.push(...buildDatasetForFilter(filteredBySite, `Hospital: ${filters.site}`, aggregationType, labels, percentageKeys ));
+                break;
+        }
+
+        if (labels.length >= 2) {
+            const sortedLabels = [...labels].sort((a, b) => {
+                const [yearA, quarterA] = a.split("-Q").map(Number);
+                const [yearB, quarterB] = b.split("-Q").map(Number);
+
+                if (isNaN(yearA) || isNaN(quarterA)) return 1;
+                if (isNaN(yearB) || isNaN(quarterB)) return -1;
+
+                return yearA === yearB ? quarterA - quarterB : yearA - yearB;
+            });
+
+            const prevLabel = sortedLabels[sortedLabels.length - 2];
+            const lastLabel = sortedLabels[sortedLabels.length - 1];
+
+            datasets = datasets.map(ds => {
+                let relevantData: Result[] = [];
+
+                if (ds.label?.startsWith("Country:")) {
+                    relevantData = filteredByCountry;
+                } else if (ds.label?.startsWith("Hospital:")) {
+                    relevantData = filteredBySite;
+                } else {
+                    relevantData = filteredData;
+                }
+
+                const grouped = groupBy(
+                    relevantData.filter(d => d.variable.toLowerCase() === variableName.toLowerCase()),
+                    (o) => o.YQ
+                );
+
+                const prevValues = (grouped[prevLabel] ?? []).map(d => parseFloat(d.Value)).filter(v => !isNaN(v));
+                const lastValues = (grouped[lastLabel] ?? []).map(d => parseFloat(d.Value)).filter(v => !isNaN(v));
+
+                let significant: "positive" | "negative" | "neutral" = "neutral";
+                let pValue: number | null = null;
+                let evolution: number | null = null;
+                let diffMedian: number | null = null;
+                let pctEvolution: string | null = null;
+
+                if (prevValues.length > 1 && lastValues.length > 1) {
+                    const medianPrev = median(prevValues);
+                    const medianLast = median(lastValues);
+                    
+                    diffMedian = medianLast - medianPrev;
+                    pctEvolution = medianPrev !== 0 ? `${((diffMedian / medianPrev) * 100).toFixed(2)}%` : null;
+
+                    pValue= tTest(prevValues, lastValues);
+                    evolution = mean(lastValues) - mean(prevValues);
+
+                    if (pValue <= 0.05) {
+                        significant = evolution > 0 ? "positive" : "negative";
+                    } 
+                }
+                 
+                return { ...ds, significant, pValue, evolution, diffMedian, pctEvolution };
+            });
+        }
         // Send the response
         res.json({ labels, datasets } as API.DataResponse);
     };
