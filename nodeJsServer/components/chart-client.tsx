@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { Chart, ChartProps } from 'react-chartjs-2';
 import { deepMerge } from '@/lib/utils';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import { variables } from '@/data/custom-variables';
 ChartJS.register(...registerables, annotationPlugin);
 
 interface ChartClientProps extends Omit<ChartProps, "type" | "data"> {
@@ -79,7 +78,7 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
         return () => {
             if (!controller.signal.aborted) controller.abort();
         };
-    }, [filters]);
+    }, [chartSettings.variableName, filters]);
 
     function calculateMedian(values: number[]): number {
         if (values.length === 0) return 0;

@@ -1,4 +1,5 @@
-import fs from 'fs';
+"use server";
+import fs from "fs";
 import path from 'path';
 
 /**
@@ -8,7 +9,7 @@ import path from 'path';
  * @returns {string} - The content of the SVG file as a string.
  * @throws {Error} - Throws an error if there is an issue reading the file.
  */
-export const getSvgContent = (svgName: string) => {
+export const getSvgContent = (svgName: string): string => {
     // Define the directory where SVG files are stored
     const svgDirectory = path.join(process.cwd(), 'components/icons');
 

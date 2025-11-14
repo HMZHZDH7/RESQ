@@ -144,8 +144,27 @@ dataApi.post("/:categoryName/:variableName", (req, res) => {
         if (!Object.keys(supportedDataOperations).includes(aggregationType.toLowerCase())) return res.status(400).json({ error: "Invalid aggregationType parameter!" });
         if (!(supportedDataOperations[aggregationType] ?? []).includes(variableType.toLowerCase())) return res.status(400).json({ error: "Invalid variableType parameter!" });
 
-        let filteredData = (await getDataFromFile()).filter(row => row.TAB.toLowerCase() === categoryName.toLowerCase() && row.variable.toLowerCase() === variableName.toLowerCase() && row.SUMMARIZE_BY === aggregationType.toLowerCase() && row.ATTRIBUTE_TYPE.toLowerCase() === variableType.toLowerCase() && row.Value !== "");
-        console.log(filteredData)
+        const allData = await getDataFromFile();
+        let filteredData: Result[];
+
+        if (categoryName.toLowerCase() === "custom_variables") {
+            filteredData = allData.filter(row =>
+                row.variable?.toLowerCase() === variableName.toLowerCase() &&
+                row.Value !== ""
+            );
+
+            console.log(`[Custom Variable] Variable "${variableName}" trouvée dans toutes sections (${filteredData.length} lignes).`);
+        } else {
+            filteredData = allData.filter(row =>
+                row.TAB.toLowerCase() === categoryName.toLowerCase() &&
+                row.variable.toLowerCase() === variableName.toLowerCase() &&
+                row.SUMMARIZE_BY === aggregationType.toLowerCase() &&
+                row.ATTRIBUTE_TYPE.toLowerCase() === variableType.toLowerCase() &&
+                row.Value !== ""
+            );
+            console.log(`[Data API] Variable "${variableName}" récupérée depuis la section "${categoryName}" (${filteredData.length} lignes).`);
+        }
+        
         let filteredByCountry = filteredData;
         let filteredBySite = filteredData;
         // Apply additional filters if provided

@@ -1,4 +1,4 @@
-import { getSvgContent } from '@/lib/get-svg-content';
+// import { getSvgContent } from '@/lib/server/get-svg-content';
 
 export const SECTIONS: SectionModule.Data[] = ([
     {
@@ -49,7 +49,7 @@ export const SECTIONS: SectionModule.Data[] = ([
             { label: "Ischemic stroke etiology", type: "stacked_bargraph", variableName: "", variableType: "categorical", aggregationType: "percentage" },
             { label: "Stroke mimics", type: "stacked_bargraph", variableName: "stroke_mimics_diagnosis", variableType: "categorical", aggregationType: "percentage" }
         ],
-        icon: getSvgContent("Group"),
+        // icon: getSvgContent("Group"),
     }, {
         label: "Bleeding",
         categoryName: "bleeding",
@@ -65,7 +65,7 @@ export const SECTIONS: SectionModule.Data[] = ([
             { label: "DVT prevention for ICH", type: "stacked_bargraph", variableName: "", variableType: "categorical", aggregationType: "percentage" },
             { label: "Hunt-Hess", type: "stacked_bargraph", variableName: "hunt_hess_score", variableType: "categorical", aggregationType: "percentage" }
         ],
-        icon: getSvgContent("WaterDrop"),
+        // icon: getSvgContent("WaterDrop"),
     },
     {
         label: "Imaging",
@@ -83,7 +83,7 @@ export const SECTIONS: SectionModule.Data[] = ([
             { label: "Symptomatic carotid stenosis 50-70%", type: "trend", variableName: "", variableType: "categorical_binary", aggregationType: "percentage" },
             { label: "ICH volume", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "mean" }
         ],
-        icon: getSvgContent("Brain"),
+        // icon: getSvgContent("Brain"),
     },
     {
         label: "Treatment",
@@ -108,7 +108,7 @@ export const SECTIONS: SectionModule.Data[] = ([
             { label: "Door-to-needle time for IVT, distribution in %", type: "stacked_bargraph", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
             { label: "Door-to-groin time for MT, distribution in %", type: "stacked_bargraph", variableName: "", variableType: "categorical", aggregationType: "percentage" }
         ],
-        icon: getSvgContent("Pill"),
+        // icon: getSvgContent("Pill"),
     },
     {
         label: "Patient outcome",
@@ -127,7 +127,7 @@ export const SECTIONS: SectionModule.Data[] = ([
             { label: "Reasons for not providing IVT", type: "stacked_bargraph", variableName: "no_thrombolysis_reason", variableType: "categorical", aggregationType: "percentage" },
             { label: "Test for dysphagia screen", type: "stacked_bargraph", variableName: "dysphagia_screening_type", variableType: "categorical", aggregationType: "percentage" }
         ],
-        icon: getSvgContent("HeartECG"),
+        // icon: getSvgContent("HeartECG"),
     },
     {
         label: "Discharge",
@@ -153,7 +153,7 @@ export const SECTIONS: SectionModule.Data[] = ([
             { label: "Modified ranking scale 3 month", type: "stacked_bargraph", variableName: "three_m_mrs", variableType: "categorical", aggregationType: "percentage" },
             { label: "NIHSS discharge", type: "trend", variableName: "discharge_nihss_score", variableType: "quantitative", aggregationType: "median" }
         ],
-        icon: getSvgContent("DoorOpen"),
+        // icon: getSvgContent("DoorOpen"),
     },
     {
         label: "Angel Awards",
@@ -170,15 +170,13 @@ export const SECTIONS: SectionModule.Data[] = ([
             { label: "Atrial fibrilation patients discharged with anticoagulants", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
             { label: "Stroke patients hospitalized in a dedicated stroke unit / ICU", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" }
         ],
-        icon: getSvgContent("Trophy"),
+        // icon: getSvgContent("Trophy"),
     },
     {
         label: "Custom variables",
         categoryName: "custom_variables",
-        charts: [
-            {label: "", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage"}
-        ],
-        icon: getSvgContent("PencilEdit"),
+         charts: [{ label: "Dynamic variable", type: "", variableName: "", variableType: "", aggregationType: "" } ],
+        // icon: getSvgContent("PencilEdit"),
     }
 ] as Omit<SectionModule.Data, "id">[])
     .map((section, index) => ({

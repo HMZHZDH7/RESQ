@@ -78,7 +78,7 @@ declare global {
             secondYearQuarter?: YearQuarterInput.YearQuarter,
             country?: string,
             site?: string,
-            variables?: string,
+            variable?: string,
             comparators?: string,
             comparisonValue?: string
         }

@@ -9,9 +9,9 @@ import { useContext, useState } from "react";
 import { AlertContext } from "@/components/contexts/AlertContext";
 import { Button } from "@/components/button";
 import { deepEqual } from "@/lib/utils";
-import { comparators, variables } from "@/data/custom-variables";
-import { SearchableSelect } from "./inputs/searchable-select";
+import { comparators, variableNames } from "@/data/custom-variables";
 import { SECTIONS } from "@/data/sections";
+import { SearchableSelect } from "./inputs/searchable-select";
 
 interface SectionProps {
     id: string;
@@ -27,9 +27,6 @@ const Section = ({ id, sectionData }: SectionProps) => {
         return acc;
     }, {} as Record<string, SelectInput.Option[]>);
 
-    // console.log(sectionData.id, sectionData.label)
-    const imagingList = sectionData.label;
-
     const comparisonOptionsList: SelectInput.Option[] = comparators.map(cmp => ({ value: cmp, label: cmp }));
 
     const [firstYearQuarter, setFirstYearQuarter] = useState<YearQuarterInput.YearQuarter | null>(null);
@@ -39,11 +36,48 @@ const Section = ({ id, sectionData }: SectionProps) => {
     const [site, setSite] = useState<string>("");
     const [siteOptions, setSiteOptions] = useState<SelectInput.Option[]>([]);
 
+    const variableSet = new Set(variableNames);
+
+    const allVariableNames = SECTIONS.flatMap(section =>
+        section.charts
+            .filter(chart => chart.variableName && chart.variableName.trim() !== "")
+            .map(chart => ({
+            label: chart.label,
+            variableName: chart.variableName,
+        }))
+    );
+
+    const getChartSettingsForVariable = (variableName: string) => {
+        for (const section of SECTIONS) {
+            for (const chart of section.charts) {
+                if (chart.variableName?.toLowerCase() === variableName.toLowerCase()) {
+                    return chart;
+                }
+            }
+        }
+        return null;
+    };
+
+    const getCategoryNameForVariable = (variableName: string) => {
+        for (const section of SECTIONS) {
+            for (const chart of section.charts) {
+                if (chart.variableName?.toLowerCase() === variableName.toLowerCase()) {
+                    return section.categoryName;
+                }
+            }
+        }
+        return "custom_variables";
+    };
+
+    console.log(getChartSettingsForVariable);
+
+    const filteredVariableNames = allVariableNames.filter(chart => variableSet.has(chart.variableName));
+    const variableNamesOptionsList: SelectInput.Option[] = filteredVariableNames.map(chart => ({ value: chart.variableName, label: chart.label, }));
+
     const [variable, setVariable] = useState<string>('');
     const [comparison, setComparison] = useState<string>("");
     const [comparisonValue, setComparisonValue] = useState<string>("");
 
-    // console.log(variable)
     const [currentlyAppliedFilterValues, setCurrentlyAppliedFilterValues] = useState<SectionModule.Filters>({});
 
     const [showMedianHospital, setShowMedianHospital] = useState(false);
@@ -90,7 +124,7 @@ const Section = ({ id, sectionData }: SectionProps) => {
         if (firstYearQuarter) filters.firstYearQuarter = { ...firstYearQuarter };
         if (secondYearQuarter) filters.secondYearQuarter = { ...secondYearQuarter };
 
-        // if (variable) filters.variables = variable;
+        if (variable) filters.variable = variable;
         if (comparison) filters.comparators = comparison;
         if (comparisonValue) filters.comparisonValue = comparisonValue;
 
@@ -115,6 +149,8 @@ const Section = ({ id, sectionData }: SectionProps) => {
     const handleComparisonValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setComparisonValue(e.target.value);
     };
+
+    console.log(currentlyAppliedFilterValues)
 
     return (
         <div id={id} className="w-full rounded-[15px] flex flex-col items-center gap-[10px] px-[38px] py-[24px] bg-white shadow-[0px_3.5px_5.5px_0px_rgba(0,_0,_0,_0.02)] relative">
@@ -141,7 +177,7 @@ const Section = ({ id, sectionData }: SectionProps) => {
                             <div className="flex-1 flex flex-col gap-[16px]">
                                 <div className="w-full relative z-[12] gap-[20px] flex items-center flex-wrap">
                                     <span className="text-primary font-bold">% of patient with:</span>
-                                    {/* <div className="w-[250px]"><SearchableSelect value={variable} onChange={handleVariableChange} placeholder="Select a variable" options={variableOptionsList} /></div> */}
+                                    <div className="w-[250px]"><Select value={variable} onChange={handleVariableChange} placeholder="Select a variable" options={variableNamesOptionsList} /></div>
                                     <div className="w-[250px]"><Select value={comparison} onChange={handleComparisonChange} onChangeHandleValueChange={true} placeholder="Select a comparator" options={comparisonOptionsList} /></div>
                                     <div className="flex flex-col w-[120px]">
                                         <input
@@ -167,83 +203,113 @@ const Section = ({ id, sectionData }: SectionProps) => {
                         <span>Hospital Median</span>
                     </label>
                 </div>
-                        <div className="w-[400px] max-h-[250px] overflow-y-auto border rounded-lg shadow-sm">
-                            <table className="w-full text-sm border border-gray-200">
-                                <thead className="bg-gray-100 sticky top-0">
-                                    <tr>
-                                        <th className="p-2 text-left">Name</th>
-                                        <th className="p-2 text-left">pValue</th>
-                                        <th className="p-2 text-left">Difference</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sectionData.charts.map((chart) => {
-                                        const stat = stats[chart.label];
-                                        const pValue = stat?.value ?? null;
-                                        const significant = stat?.significant ?? "neutral";
-                                        const pctEvolution = stat?.pctEvolution ?? null;  
+                <div className="w-[400px] max-h-[250px] overflow-y-auto border rounded-lg shadow-sm">
+                    <table className="w-full text-sm border border-gray-200">
+                        <thead className="bg-gray-100 sticky top-0">
+                            <tr>
+                                <th className="p-2 text-left">Name</th>
+                                <th className="p-2 text-left">pValue</th>
+                                <th className="p-2 text-left">Difference</th>
+                            </tr>
+                        </thead>
+                            <tbody>
+                                {sectionData.charts.map((chart) => {
+                                    const stat = stats[chart.label];
+                                    const pValue = stat?.value ?? null;
+                                    const significant = stat?.significant ?? "neutral";
+                                    const pctEvolution = stat?.pctEvolution ?? null;  
 
-                                        let displayPValue = pValue !== null ? pValue.toFixed(4) : "—";
-                                        let displayPctEvolution = pctEvolution !== null ? pctEvolution : "—";
+                                    let displayPValue = pValue !== null ? pValue.toFixed(4) : "—";
+                                    let displayPctEvolution = pctEvolution !== null ? pctEvolution : "—";
 
-                                        let valueCellStyle = "";
-                                        if (significant === "positive") {
-                                            displayPValue = `+${displayPValue}`;
-                                            valueCellStyle = "bg-green-100 text-green-800 font-semibold";
-                                        } else if (significant === "negative") {
-                                            displayPValue = `-${displayPValue}`;
-                                            valueCellStyle = "bg-red-100 text-red-800 font-semibold";
-                                        } else {
-                                            valueCellStyle = ""; // neutre
-                                        }
+                                    let valueCellStyle = "";
+                                    if (significant === "positive") {
+                                        displayPValue = `+${displayPValue}`;
+                                        valueCellStyle = "bg-green-100 text-green-800 font-semibold";
+                                    } else if (significant === "negative") {
+                                        displayPValue = `-${displayPValue}`;
+                                        valueCellStyle = "bg-red-100 text-red-800 font-semibold";
+                                    } else {
+                                        valueCellStyle = ""; // neutre
+                                    }
 
-                                        let pctCellStyle = "";
-                                        if (pctEvolution !== null && pctEvolution !== "_") {
-                                            const pctValue = parseFloat(pctEvolution.replace("%", ""));
+                                    let pctCellStyle = "";
+                                    if (pctEvolution !== null && pctEvolution !== "_") {
+                                        const pctValue = parseFloat(pctEvolution.replace("%", ""));
 
-                                            if (Math.abs(pctValue) >= 10) {
-                                                if (pctValue > 0) {
-                                                    pctCellStyle = "bg-green-100 text-green-800 font-semibold";
-                                                } else {
-                                                    pctCellStyle = "bg-red-100 text-red-800 font-semibold";
-                                                }
+                                        if (Math.abs(pctValue) >= 10) {
+                                            if (pctValue > 0) {
+                                                pctCellStyle = "bg-green-100 text-green-800 font-semibold";
+                                            } else {
+                                                pctCellStyle = "bg-red-100 text-red-800 font-semibold";
                                             }
                                         }
+                                    }
 
-                                        return (
-                                            <tr key={chart.label}>
-                                                <td className="p-2">{chart.label}</td>
-                                                <td className={`p-2 ${valueCellStyle}`}>{displayPValue}</td>
-                                                <td className={`p-2 ${pctCellStyle}`}>{displayPctEvolution}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>  
-                            </table>
-                        </div>
-                    </div> 
-                    <Button onClick={handleApplyFiltersButtonClick} className="w-full">Reload data with filters</Button>
-                    <div className="w-full h-[1px] bg-gray-light"></div>
-                    <div className="w-full grid grid-cols-2 gap-x-[40px] gap-y-[20px] pt-[20px] px-[10px]">
-                        {
-                            sectionData.charts.length > 0 &&
-
-                            sectionData.charts.map((chartSettings) => (
-                                <ChartClient key={`${chartSettings.label}${chartSettings.type}${chartSettings.aggregationType}`} className="w-full h-auto"
-                                    categoryName={sectionData.categoryName}
-                                    chartSettings={chartSettings}
-                                    filters={currentlyAppliedFilterValues}
-                                    showMedianHospital={showMedianHospital}
-                                    options={{
-                                        responsive: false,
-                                        maintainAspectRatio: true,
-                                    }}
-                                    onPValue={handleStats}
-                                ></ChartClient>
-                            ))
-                        }
+                                    return (
+                                        <tr key={chart.label}>
+                                            <td className="p-2">{chart.label}</td>
+                                            <td className={`p-2 ${valueCellStyle}`}>{displayPValue}</td>
+                                            <td className={`p-2 ${pctCellStyle}`}>{displayPctEvolution}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>  
+                        </table>
                     </div>
-                
+                </div> 
+                <Button onClick={handleApplyFiltersButtonClick} className="w-full">Reload data with filters</Button>
+                <div className="w-full h-[1px] bg-gray-light"></div>
+                <div className="w-full grid grid-cols-2 gap-x-[40px] gap-y-[20px] pt-[20px] px-[10px]">
+                    {sectionData.categoryName === "custom_variables" ? ( 
+                        
+                        variable ? (() => {
+
+                        const chartConfig = getChartSettingsForVariable(variable);
+
+                        if (!chartConfig) {
+                            return (
+                            <p className="text-red-500 font-semibold text-center w-full">
+                                No chart configuration found for this variable.
+                            </p>
+                            );
+                        }
+
+                        return (
+                            
+                            <ChartClient
+                                key={`${chartConfig.variableName}${chartConfig.type}${chartConfig.aggregationType}`}
+                                className="w-full h-auto"
+                                categoryName={getCategoryNameForVariable(variable)}
+                                chartSettings={chartConfig}
+                                filters={ currentlyAppliedFilterValues }
+                                showMedianHospital={showMedianHospital}
+                                options={{
+                                    responsive: false,
+                                    maintainAspectRatio: true,
+                                }}
+                                onPValue={handleStats}
+                            />
+                        );
+                    })() : null 
+                ) : (
+                    sectionData.charts.map(chartSettings => (
+                    <ChartClient
+                        key={`${chartSettings.label}${chartSettings.type}${chartSettings.aggregationType}`}
+                        className="w-full h-auto"
+                        categoryName={sectionData.categoryName}
+                        chartSettings={chartSettings}
+                        filters={currentlyAppliedFilterValues}
+                        showMedianHospital={showMedianHospital}
+                        options={{
+                        responsive: false,
+                        maintainAspectRatio: true,
+                        }}
+                        onPValue={handleStats}
+                    />
+                    ))
+                )}
+            </div>
         </div>
     );
 };

@@ -2,7 +2,7 @@
 
 export const comparators = ["<", ">", "="];
 
-export const variables = [
+export const variableNames = [
   "door_to_needle",
   "door_to_groin",
   "door_to_imaging",
