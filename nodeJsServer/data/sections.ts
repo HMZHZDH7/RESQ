@@ -159,23 +159,23 @@ export const SECTIONS: SectionModule.Data[] = ([
         label: "Angel Awards",
         categoryName: "angel_awards",
         charts: [
-            { label: "Patients treated with door-to-needle time <= 60 minutes", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
-            { label: "Patients treated with door-to-needle time <= 45 minutes", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
-            { label: "Patients treated with door-to-groin time <= 120 minutes", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
-            { label: "Patients treated with door-to-groin time <= 90 minutes", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
-            { label: "Recanalization rate out of total ischemic incidence", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
-            { label: "Suspected stroke patients undergoing CT/MRI", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
-            { label: "Stroke patients undergoing dysphagia screening", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
-            { label: "Ischemic stroke patients discharged with antiplatelets", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
-            { label: "Atrial fibrilation patients discharged with anticoagulants", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
-            { label: "Stroke patients hospitalized in a dedicated stroke unit / ICU", type: "trend", variableName: "", variableType: "quantitative", aggregationType: "percentage" }
-        ],
+            { label: "Patients treated with door-to-needle time <= 60 minutes", type: "stacked_bargraph", variableName: "door_to_needle_60", variableType: "quatitative", aggregationType: "percentage" },
+            { label: "Patients treated with door-to-needle time <= 45 minutes", type: "stacked_bargraph", variableName: "door_to_needle_45", variableType: "quantitative", aggregationType: "percentage" },
+            { label: "Patients treated with door-to-groin time <= 120 minutes", type: "stacked_bargraph", variableName: "door_to_groin_120", variableType: "quantitative", aggregationType: "percentage" },
+            { label: "Patients treated with door-to-groin time <= 90 minutes", type: "stacked_bargraph", variableName: "door_to_groin_90", variableType: "quantitative", aggregationType: "percentage" },
+            { label: "Recanalization rate out of total ischemic incidence", type: "stacked_bargraph", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
+            { label: "Suspected stroke patients undergoing CT/MRI", type: "stacked_bargraph", variableName: "imaging_ct", variableType: "quantitative", aggregationType: "percentage" },
+            { label: "Stroke patients undergoing dysphagia screening", type: "stacked_bargraph", variableName: "stroke_undergoing_dysphagia_screening", variableType: "quantitative", aggregationType: "percentage" },
+            { label: "Ischemic stroke patients discharged with antiplatelets", type: "stacked_bargraph", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
+            { label: "Atrial fibrilation patients discharged with anticoagulants", type: "stacked_bargraph", variableName: "", variableType: "quantitative", aggregationType: "percentage" },
+            { label: "Stroke patients hospitalized in a dedicated stroke unit / ICU", type: "stacked_bargraph", variableName: "", variableType: "quantitative", aggregationType: "percentage" }
+        ], 
         // icon: getSvgContent("Trophy"),
     },
     {
         label: "Custom variables",
         categoryName: "custom_variables",
-         charts: [{ label: "Dynamic variable", type: "", variableName: "", variableType: "", aggregationType: "" } ],
+        charts: [{ label: "Dynamic variable", type: "", variableName: "", variableType: "", aggregationType: "" } ],
         // icon: getSvgContent("PencilEdit"),
     }
 ] as Omit<SectionModule.Data, "id">[])

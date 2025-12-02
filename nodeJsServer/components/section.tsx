@@ -11,7 +11,6 @@ import { Button } from "@/components/button";
 import { deepEqual } from "@/lib/utils";
 import { comparators, variableNames } from "@/data/custom-variables";
 import { SECTIONS } from "@/data/sections";
-import { SearchableSelect } from "./inputs/searchable-select";
 
 interface SectionProps {
     id: string;
@@ -68,8 +67,6 @@ const Section = ({ id, sectionData }: SectionProps) => {
         }
         return "custom_variables";
     };
-
-    console.log(getChartSettingsForVariable);
 
     const filteredVariableNames = allVariableNames.filter(chart => variableSet.has(chart.variableName));
     const variableNamesOptionsList: SelectInput.Option[] = filteredVariableNames.map(chart => ({ value: chart.variableName, label: chart.label, }));
@@ -150,7 +147,7 @@ const Section = ({ id, sectionData }: SectionProps) => {
         setComparisonValue(e.target.value);
     };
 
-    console.log(currentlyAppliedFilterValues)
+    // console.log(currentlyAppliedFilterValues)
 
     return (
         <div id={id} className="w-full rounded-[15px] flex flex-col items-center gap-[10px] px-[38px] py-[24px] bg-white shadow-[0px_3.5px_5.5px_0px_rgba(0,_0,_0,_0.02)] relative">
@@ -276,7 +273,6 @@ const Section = ({ id, sectionData }: SectionProps) => {
                         }
 
                         return (
-                            
                             <ChartClient
                                 key={`${chartConfig.variableName}${chartConfig.type}${chartConfig.aggregationType}`}
                                 className="w-full h-auto"

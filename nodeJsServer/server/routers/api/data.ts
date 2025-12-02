@@ -136,14 +136,150 @@ const dataApi = express.Router();
  * Handles POST requests for data aggregation.
  * Performs validation, filtering, and aggregation of the requested data.
  */
-dataApi.post("/:categoryName/:variableName", (req, res) => {
+dataApi.post("/:categoryName/:variableName", async (req, res) => {
+    const { categoryName, variableName } = req.params;
+    const { filters } = req.body;
+
+    if (categoryName?.toLowerCase() === "angel_awards") 
+        {
+            try {
+                const allData = await getDataFromFile();
+                let variableKey = variableName.toLowerCase();
+                let raw: Result[];
+                let threshold: number | string;
+
+                if (variableKey.startsWith("door_to_needle")) {
+                    raw = allData.filter(d => d.variable.toLowerCase() === "door_to_needle" && d.Value !== "");
+                    if (variableKey.endsWith("_60")) threshold = 60;
+                    else if (variableKey.endsWith("_45")) threshold = 45;
+                    else return res.status(400).json({ error: "Unknown threshold for door_to_needle" });
+                } else if (variableKey.startsWith("door_to_groin")) {
+                    raw = allData.filter(d => d.variable.toLowerCase() === "door_to_groin" && d.Value !== "");
+                    if (variableKey.endsWith("_120")) threshold = 120;
+                    else if (variableKey.endsWith("_90")) threshold = 90;
+                    else return res.status(400).json({ error: "Unknown threshold for door_to_groin" });
+                } else if (variableKey.startsWith("stroke_undergoing_dysphagia_screening")) {
+                    let filteredData = allData.filter(d => d.variable.toLowerCase() === "dysphagia_screening_type");
+
+                    if (filters?.country) {
+                        filteredData = filteredData.filter(d => d.site_country === filters.country);
+                    }
+                    if (filters?.site) {
+                        filteredData = filteredData.filter(d => d.site_id === filters.site);
+                    }
+
+                    const grouped = groupBy(filteredData, d => d.YQ);
+                    const labels = Object.keys(grouped).sort();
+
+                    const data = labels.map(label => {
+                        const allForLabel = grouped[label]; 
+                        if (!allForLabel || allForLabel.length === 0) return 0;
+
+                        const screenedForLabel = allForLabel.filter(d => d.Value && d.Value.trim() !== "");
+                        const countScreened = screenedForLabel.length;
+                        const totalPatients = allForLabel.length;
+
+                        return (countScreened / totalPatients) * 100;
+                    });
+
+                    return res.json({
+                        labels,
+                        datasets: [
+                            {
+                                label: "Percentage of stroke patients undergoing dysphagia screening",
+                                data
+                            }
+                        ]
+                    });
+                } else if (variableKey.startsWith("imaging_ct")) {
+                    let filteredData = allData.filter(d => d.variable.toLowerCase() === "imaging_type");
+
+                    if (filters?.country) {
+                        filteredData = filteredData.filter(d => d.site_country === filters.country);
+                    }
+                    if (filters?.site) {
+                        filteredData = filteredData.filter(d => d.site_id === filters.site);
+                    }
+
+                    const grouped = groupBy(filteredData, d => d.YQ);
+                    const labels = Object.keys(grouped).sort();
+
+                    const data = labels.map(label => {
+                        const values = grouped[label].map(i => i.Value.toLowerCase());
+                        if (values.length === 0) return 0;
+
+                        const countCT = values.filter(v => v.includes("ct")).length;
+                        return (countCT / values.length) * 100;
+                    });
+
+                    return res.json({
+                        labels,
+                        datasets: [
+                            {
+                                label: "Percentage of CT imaging",
+                                data
+                            }
+                        ]
+                    });
+                } else {
+                    return res.status(400).json({ error: "Unknown angel_awards variable" });
+                }
+        
+                let filtered = raw;
+
+                if (filters?.country) {
+                    filtered = filtered.filter(d => d.site_country === filters.country);
+                }
+
+                if (filters?.site) {
+                    filtered = filtered.filter(d => d.site_id === filters.site);
+                }               
+
+                const grouped = groupBy(filtered, d => d.YQ);
+
+                const computeThresholdData = (grouped: Record<string, Result[]>, threshold: number | string) => {
+                    const labels = Object.keys(grouped).sort();
+
+                    const data = labels.map(label => {
+                        const values = grouped[label].map(i => i.Value).filter(v => v !== "");
+
+                        if (values.length === 0) return 0;
+
+                        if (typeof threshold === "number") {
+                            const count = values.map(Number).filter(v => !isNaN(v) && v <= threshold).length;
+                            return (count / values.length) * 100;
+                        } else {
+                            const count = values.filter(v => v.includes(threshold as string)).length;
+                            return (count / values.length) * 100;
+                        }
+                    });
+
+                    return { labels, data };
+                };
+
+                const result = computeThresholdData(grouped, threshold);
+
+                return res.json({
+                    labels: result.labels,
+                    datasets: [
+                        {
+                            label: typeof threshold === "number" ? `Percentage ≤ ${threshold} min` : `Percentage of ${threshold}`,
+                            data: result.data
+                        }
+                    ]
+                });
+            } catch (e) {
+                console.error(e);
+                return res.status(500).json({ error: "Door-to-Needle calculation failed" });
+            }
+        }
     /**
      * Filters and processes data based on the request parameters, then sends the response.
      */
     const getAndSendData = async <T extends string>(categoryName: string, variableName: string, aggregationType: T, variableType: string, filters?: SectionModule.Filters) => {
         if (!Object.keys(supportedDataOperations).includes(aggregationType.toLowerCase())) return res.status(400).json({ error: "Invalid aggregationType parameter!" });
         if (!(supportedDataOperations[aggregationType] ?? []).includes(variableType.toLowerCase())) return res.status(400).json({ error: "Invalid variableType parameter!" });
-
+        
         const allData = await getDataFromFile();
         let filteredData: Result[];
 
@@ -153,7 +289,6 @@ dataApi.post("/:categoryName/:variableName", (req, res) => {
                 row.Value !== ""
             );
 
-            console.log(`[Custom Variable] Variable "${variableName}" trouvée dans toutes sections (${filteredData.length} lignes).`);
         } else {
             filteredData = allData.filter(row =>
                 row.TAB.toLowerCase() === categoryName.toLowerCase() &&
@@ -162,7 +297,6 @@ dataApi.post("/:categoryName/:variableName", (req, res) => {
                 row.ATTRIBUTE_TYPE.toLowerCase() === variableType.toLowerCase() &&
                 row.Value !== ""
             );
-            console.log(`[Data API] Variable "${variableName}" récupérée depuis la section "${categoryName}" (${filteredData.length} lignes).`);
         }
         
         let filteredByCountry = filteredData;

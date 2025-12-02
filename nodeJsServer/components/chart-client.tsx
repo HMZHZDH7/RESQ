@@ -1,12 +1,12 @@
 "use client";
 
 import { cn } from '@/lib/utils';
-import { Chart as ChartJS, ChartOptions, ChartTypeRegistry, registerables } from 'chart.js';
+import { Chart as ChartJS, ChartOptions, ChartTypeRegistry, registerables, LineElement, BarElement, CategoryScale, LinearScale, PointElement } from 'chart.js';
 import { useEffect, useState } from 'react';
 import { Chart, ChartProps } from 'react-chartjs-2';
 import { deepMerge } from '@/lib/utils';
 import annotationPlugin from 'chartjs-plugin-annotation';
-ChartJS.register(...registerables, annotationPlugin);
+ChartJS.register(...registerables, annotationPlugin, LineElement, BarElement, CategoryScale, LinearScale, PointElement);
 
 interface ChartClientProps extends Omit<ChartProps, "type" | "data"> {
   categoryName: string;
@@ -36,6 +36,7 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
 
         setError(null);
         setIsLoading(true);
+
         const basePath = process.env.NEXT_PUBLIC_BASE_PATH ? process.env.NEXT_PUBLIC_BASE_PATH.toLowerCase() : "";
         fetch(
             `${basePath}/api/data/${categoryName.toLowerCase()}/${chartSettings.variableName.toLowerCase()}`,
@@ -78,7 +79,7 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
         return () => {
             if (!controller.signal.aborted) controller.abort();
         };
-    }, [chartSettings.variableName, filters]);
+    }, [filters]);
 
     function calculateMedian(values: number[]): number {
         if (values.length === 0) return 0;
@@ -131,6 +132,31 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
         }
         return colorMap[suffix];
     };
+
+    type AngelRule = {
+        gold?: { min: number; max: number };   
+        silver?: { min: number; max: number }; 
+        black: { min: number; max: number };  
+    };
+    const angelAwardsColorRules : Record<string, AngelRule> = {
+        door_to_needle_60: { gold: { min: 50, max: 74.9 }, black: { min: 75, max: Infinity } },
+        door_to_needle_45: { silver: { min: 0, max: 49.9 }, black: { min: 50, max: Infinity } },
+        door_to_groin_120: { gold: { min: 50, max: 74.9 }, black: { min: 75, max: Infinity } },
+        door_to_groin_90: { silver: { min: 0, max: 49.9 }, black: { min: 50, max: Infinity } },
+        imaging_ct: { gold: { min: 80, max: 84.9 }, silver: { min: 85, max: 89.9 }, black: { min: 90, max: Infinity } },
+        stroke_undergoing_dysphagia_screening: { gold: { min: 5, max: 14.9 }, silver: { min: 15, max: 14.9 }, black: { min: 15, max: Infinity } }
+    };
+
+    function getColor( graph: keyof typeof angelAwardsColorRules, value: number): string{
+        const rules = angelAwardsColorRules[graph];
+        for (const color of ["gold", "silver", "black"] as const) {
+            const rule = rules[color];
+            if (!rule) continue;
+            if (value >= rule.min && value <= rule.max) return color;
+        }
+
+        return "lightblue";
+    }
 
     data.datasets = data.datasets.map(dt => {
         let datasetType: keyof ChartTypeRegistry;
@@ -214,8 +240,33 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                         },
                         min: 0
                     }
+                },
+
+                ...(categoryName === "angel_awards"
+                ? {
+                    plugins: {
+                        annotation: {
+                            annotations: {
+                                fiftyPercentLine: {
+                                    type: 'line',
+                                    yMin: 50,
+                                    yMax: 50,
+                                    borderColor: "black",
+                                    borderWidth: 2,
+                                    // borderDash: [6, 6],
+                                    label: {
+                                        content: '50%',
+                                        enabled: true,
+                                        position: 'center',
+                                        color: "black",
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-            } as ChartOptions);
+                : {})
+            });
         break;  
     };
 
@@ -265,7 +316,7 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                             enabled: true,
                             position: 'end'
                         }
-                    }
+                    },
                 }
             }
         }
@@ -280,7 +331,6 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
             : error?.type === "warning"
             ? "shadow-[inset_0px_0px_8px_0px_#FFA500CC]"
             : (() => {
-                // Shadow pour les évolutions significatives si pas d'erreur
                 if (!data.datasets) return "";
                 
                 const hasPositive = (data.datasets as any[]).some(ds => ds.significant === "positive");
@@ -288,7 +338,7 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
 
                 if (hasPositive) return "shadow-[inset_0px_0px_8px_0px_#00FF00CC]";
                 if (hasNegative) return "shadow-[inset_0px_0px_8px_0px_#FF0000CC]";
-                return ""; // pas d'évolution
+                return ""; 
             })()            
         )}
     >
@@ -300,6 +350,11 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                 data={{ 
                     labels: data.labels, 
                     datasets: data.datasets.map(dt => {
+                        const variableName = chartSettings.variableName as keyof typeof angelAwardsColorRules;
+                         const angelAwardsColor = categoryName === "angel_awards"
+                            ? dt.data.map(v => getColor(variableName, v as number))
+                            : dt.data.map(() => color);
+
                         let datasetType: keyof ChartTypeRegistry | undefined;
 
                         if (chartSettings.aggregationType === "percentage") {
@@ -316,7 +371,9 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                             ...dt,
                             type: datasetType,
                             hidden: dt.label?.includes("Hospital") && !props.showMedianHospital,
-                            borderColor: color,
+                            pointRadius: categoryName === "angel_awards" ? 4 : 0,
+                            borderColor: categoryName === "angel_awards" ? angelAwardsColor : color,
+                            backgroundColor: categoryName === "angel_awards" ? angelAwardsColor : color,
                             label: dt.label && (dt.label !== "1" || chartSettings.variableType !== "categorical_binary") 
                                     ? `${dt.label} (${chartSettings.aggregationType})` 
                                     : `${chartSettings.variableName} (${chartSettings.aggregationType})`, 
