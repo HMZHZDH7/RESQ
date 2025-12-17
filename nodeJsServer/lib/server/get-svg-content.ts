@@ -1,25 +1,29 @@
 "use server";
+
 import fs from "fs";
-import path from 'path';
+import path from "path";
+
+// On déclare le dossier une seule fois
+const svgDirectory = path.join(process.cwd(), "components/icons");
+
+// Cache pour éviter de relire les SVG à chaque appel
+const cache = new Map<string, string>();
 
 /**
- * Reads the content of an SVG file from the components/icons directory.
- * 
- * @param {string} svgName - The name of the SVG file (without the .svg extension).
- * @returns {string} - The content of the SVG file as a string.
- * @throws {Error} - Throws an error if there is an issue reading the file.
+ * Reads and caches the content of an SVG file in components/icons.
  */
 export const getSvgContent = (svgName: string): string => {
-    // Define the directory where SVG files are stored
-    const svgDirectory = path.join(process.cwd(), 'components/icons');
+    if (cache.has(svgName)) {
+        return cache.get(svgName)!;
+    }
 
-    // Create the full file path by appending the SVG name and extension
     const filePath = path.join(svgDirectory, `${svgName}.svg`);
 
-    try {
-        const data = fs.readFileSync(filePath, 'utf8');
-        return data;
-    } catch (err) {
-        throw new Error(`Error reading SVG file: ${err}`);
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`[getSvgContent] SVG not found: ${filePath}`);
     }
+
+    const data = fs.readFileSync(filePath, "utf8");
+    cache.set(svgName, data);
+    return data;
 };

@@ -1,8 +1,8 @@
 "use client";
 
-export const comparators = ["<", ">", "="];
+export const allowedCustomComparators = ["<", ">", "="];
 
-export const variableNames = [
+export const allowedCustomVariables: string [] = [
   "door_to_needle",
   "door_to_groin",
   "door_to_imaging",

@@ -1,3 +1,4 @@
+import { ComponentType, SVGProps } from "react";
 declare global {
     namespace SectionModule {
         /**
@@ -13,7 +14,7 @@ declare global {
             label: string,
             categoryName: string,
             id: string,
-            icon: string,
+            icon?: ComponentType<SVGProps<SVGSVGElement>>,
             charts: Chart[]
         }
 
@@ -79,7 +80,7 @@ declare global {
             country?: string,
             site?: string,
             variable?: string,
-            comparators?: string,
+            comparator?: string,
             comparisonValue?: string
         }
     }

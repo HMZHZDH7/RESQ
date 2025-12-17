@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from '@/lib/utils';
-import { Chart as ChartJS, ChartOptions, ChartTypeRegistry, registerables, LineElement, BarElement, CategoryScale, LinearScale, PointElement } from 'chart.js';
+import { Chart as ChartJS, ChartOptions, ChartTypeRegistry, registerables, LineElement, BarElement, CategoryScale, LinearScale, PointElement, Plugin } from 'chart.js';
 import { useEffect, useState } from 'react';
 import { Chart, ChartProps } from 'react-chartjs-2';
 import { deepMerge } from '@/lib/utils';
@@ -16,6 +16,53 @@ interface ChartClientProps extends Omit<ChartProps, "type" | "data"> {
   onPValue?: (label: string, pValueObj: { value: number | null, significant: "positive" | "negative" | "neutral", diffMedian: number | null, pctEvolution: string | null }) => void;
 }
 
+const naSymbolPlugin: Plugin = {
+    id: "naSymbol",
+    afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+
+        chart.data.datasets.forEach((dataset: any, datasetIndex) => {
+            const meta = chart.getDatasetMeta(datasetIndex);
+
+           meta.data.forEach((element: any, index: number) => {
+                if (dataset.data[index] === null) {
+                    const prevIndex = (() => {
+                        for (let i = index - 1; i >= 0; i--) {
+                            if (dataset.data[i] !== null && !isNaN(dataset.data[i])) return i;
+                        }
+                        return null;
+                    })();
+
+                    const nextIndex = (() => {
+                        for (let i = index + 1; i < dataset.data.length; i++) {
+                            if (dataset.data[i] !== null && !isNaN(dataset.data[i])) return i;
+                        }
+                        return null;
+                    })();
+
+                    let yInterpolated = element.y; 
+                    if (prevIndex !== null && nextIndex !== null) {
+                        const prevPoint = meta.data[prevIndex];
+                        const nextPoint = meta.data[nextIndex];
+
+                        const ratio = (index - prevIndex) / (nextIndex - prevIndex);
+                        yInterpolated = prevPoint.y + ratio * (nextPoint.y - prevPoint.y);
+                    }
+
+                    const { x } = element.getProps(['x'], true);
+
+                    ctx.save();
+                    ctx.fillStyle = "#FF0000";
+                    ctx.font = "bold 12px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("N.A", x, yInterpolated - 10); 
+                    ctx.restore();
+                }
+            });
+        });
+    }
+};
 const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props }: ChartClientProps) => {
     const [data, setData] = useState<API.DataResponse>({ labels: [], datasets: [{ data: [] }] });
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -33,7 +80,6 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
             return;
         };
         const controller = new AbortController();
-
         setError(null);
         setIsLoading(true);
 
@@ -55,7 +101,7 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                 response.json().then((jsonResponse: API.DataResponse) => {
                     setIsLoading(false);
                     setData(jsonResponse);
-
+                    console.log(jsonResponse);
                     if (onPValue) {
                         onPValue(chartSettings.label, { 
                             value: jsonResponse.datasets?.[0]?.pValue ?? null, 
@@ -91,13 +137,22 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
         return (sorted[mid - 1] + sorted[mid]) / 2;
     }
 
-    let type: keyof ChartTypeRegistry = "line";
+    let type: keyof ChartTypeRegistry = chartSettings.type === 'stacked_bargraph' ? 'bar' : 'line';
+
     let options: ChartOptions = {
         maintainAspectRatio: false,
         plugins: {
             title: {
                 display: true,
-                text: `${chartSettings.label}`
+                text: chartSettings.label
+            },
+            tooltip: {
+                callbacks: {
+                    label(ctx: any) {
+                        if (ctx.raw === null) return 'N.A';
+                        return `${ctx.dataset.label}: ${ctx.raw}`;
+                    }
+                }
             }
         }
     };
@@ -125,7 +180,7 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
 
     const getColorForSuffix = (label: string) => {
         const parts = label.split('-');
-        const suffix = parts.length > 1 ? parts[1].trim() : label; // récupérer tout après le -
+        const suffix = parts.length > 1 ? parts[1].trim() : label; 
         if (!colorMap[suffix]) {
             colorMap[suffix] = palette[colorIndex % palette.length];
             colorIndex++;
@@ -133,30 +188,55 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
         return colorMap[suffix];
     };
 
-    type AngelRule = {
-        gold?: { min: number; max: number };   
-        silver?: { min: number; max: number }; 
-        black: { min: number; max: number };  
-    };
-    const angelAwardsColorRules : Record<string, AngelRule> = {
-        door_to_needle_60: { gold: { min: 50, max: 74.9 }, black: { min: 75, max: Infinity } },
-        door_to_needle_45: { silver: { min: 0, max: 49.9 }, black: { min: 50, max: Infinity } },
-        door_to_groin_120: { gold: { min: 50, max: 74.9 }, black: { min: 75, max: Infinity } },
-        door_to_groin_90: { silver: { min: 0, max: 49.9 }, black: { min: 50, max: Infinity } },
-        imaging_ct: { gold: { min: 80, max: 84.9 }, silver: { min: 85, max: 89.9 }, black: { min: 90, max: Infinity } },
-        stroke_undergoing_dysphagia_screening: { gold: { min: 5, max: 14.9 }, silver: { min: 15, max: 14.9 }, black: { min: 15, max: Infinity } }
-    };
-
-    function getColor( graph: keyof typeof angelAwardsColorRules, value: number): string{
-        const rules = angelAwardsColorRules[graph];
-        for (const color of ["gold", "silver", "black"] as const) {
-            const rule = rules[color];
-            if (!rule) continue;
-            if (value >= rule.min && value <= rule.max) return color;
-        }
-
-        return "lightblue";
+    type AngelRange = { min: number; max: number };
+    interface AngelRule {
+        gold?: AngelRange;
+        silver?: AngelRange;
+        black: AngelRange;
     }
+
+    interface AngelAwardsPluginOptions {
+        enabled: boolean;
+        rule: AngelRule;
+    }
+
+    const angelAwardsColorRules : Record<string, AngelRule> = {
+        door_to_needle_60: { gold: { min: 50, max: 74.9 }, black: { min: 75, max: 100 } },
+        door_to_needle_45: { silver: { min: 0, max: 49.9 }, black: { min: 50, max: 100 } },
+        door_to_groin_120: { gold: { min: 50, max: 74.9 }, black: { min: 75, max: 100 } },
+        door_to_groin_90: { silver: { min: 0, max: 49.9 }, black: { min: 50, max: 100 } },
+        imaging_ct: { gold: { min: 80, max: 84.9 }, silver: { min: 85, max: 89.9 }, black: { min: 90, max: 100 } },
+        stroke_undergoing_dysphagia_screening: { gold: { min: 5, max: 14.9 }, silver: { min: 15, max: 14.9 }, black: { min: 15, max: 100 } }
+    };
+
+    const angelAwardsBackgroundPlugin = {
+        id: "angelAwardsBackground",
+        beforeDraw(chart: ChartJS, args: any, options: AngelAwardsPluginOptions) {
+            if (!options.enabled) return;
+
+            const { ctx, chartArea: { left, right }, scales } = chart;
+
+            const yScale = scales.y;
+
+            const rule = options.rule;
+            const drawZone = (color: string, range?: AngelRange) => {
+                if (!range) return;
+
+                const yStart = yScale.getPixelForValue(range.max);
+                const yEnd = yScale.getPixelForValue(range.min);
+
+                ctx.save();
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.5;
+                ctx.fillRect(left, yStart, right - left, yEnd - yStart);
+                ctx.restore();
+            };
+
+            drawZone("#FFD700", rule.gold);   
+            drawZone("#C0C0C0", rule.silver); 
+            drawZone("#000000", rule.black);  
+        }
+    };
 
     data.datasets = data.datasets.map(dt => {
         let datasetType: keyof ChartTypeRegistry;
@@ -214,10 +294,10 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                 },
                 scales: {
                     x: {
-                        stacked: true, // Enable stacking on the x-axis
+                        stacked: true,
                     },
                     y: {
-                        stacked: true, // Enable stacking on the y-axis
+                        stacked: true, 
                     }
                 }
             } as ChartOptions);
@@ -235,10 +315,11 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                     y: {
                         ticks: {
                             callback: function (value: any) {
-                                return value + '%'; // Show percentage labels on the Y-axis
+                                return value + '%'; 
                             }
                         },
-                        min: 0
+                        min: 0,
+                        max: 100
                     }
                 },
 
@@ -253,7 +334,6 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                                     yMax: 50,
                                     borderColor: "black",
                                     borderWidth: 2,
-                                    // borderDash: [6, 6],
                                     label: {
                                         content: '50%',
                                         enabled: true,
@@ -273,29 +353,7 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
     options = deepMerge(options, {   
         plugins: {
             annotation: {
-                annotations: {
-                    medianCountryLine: {
-                        type: 'line',
-                        yMin: (ctx: any) => {
-                            const dataset = ctx.chart.data.datasets.find((dt: any) => dt.label?.includes('Country'));
-                            const data = Array.isArray(dataset?.data) ? dataset.data as number[] : [];
-                            return calculateMedian(data);
-                        },
-                        yMax: (ctx: any) => {
-                            const dataset = ctx.chart.data.datasets.find((dt: any) => dt.label?.includes('Country'));
-                            const data = Array.isArray(dataset?.data) ? dataset.data as number[] : [];
-                            return calculateMedian(data);
-                        },
-                        borderColor: "rgba(0, 123, 255, 0.7)",
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        label: {
-                            content: 'Country median',
-                            enabled: true,
-                            position: 'end',
-                        }
-                    },
-                    
+                annotations: {                    
                     medianHospitalLine: {
                         type: 'line',
                         yMin: (ctx: any) => {
@@ -318,11 +376,24 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                         }
                     },
                 }
-            }
+            },
         }
     } as ChartOptions);
 
-    
+    if (categoryName === "angel_awards") {
+        const rule = angelAwardsColorRules[chartSettings.variableName];
+        if (rule) {
+            options = deepMerge(options, {
+                plugins: {
+                    angelAwardsBackground: {
+                        enabled: true,
+                        rule
+                    }
+                }
+            });
+        }
+    }
+
     return <div
         className={cn(
             "relative w-full rounded-[15px] flex flex-col gap-[20px] pt-[10px] items-center",
@@ -347,13 +418,15 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                 height={350}
                 {...props}
                 type={type}
+                plugins={[angelAwardsBackgroundPlugin, naSymbolPlugin]}
                 data={{ 
                     labels: data.labels, 
                     datasets: data.datasets.map(dt => {
-                        const variableName = chartSettings.variableName as keyof typeof angelAwardsColorRules;
-                         const angelAwardsColor = categoryName === "angel_awards"
-                            ? dt.data.map(v => getColor(variableName, v as number))
-                            : dt.data.map(() => color);
+                        
+                        const baseColor = getColorForSuffix(dt.label ?? "");
+                        const color = dt.label?.includes("Hospital") 
+                            ? adjustColor(baseColor, 0.8) 
+                            : baseColor;
 
                         let datasetType: keyof ChartTypeRegistry | undefined;
 
@@ -362,25 +435,21 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                             if (dt.label?.includes("Hospital")) datasetType = "line";
                         }
 
-                        const baseColor = getColorForSuffix(dt.label ?? "");
-                        const color = dt.label?.includes("Hospital") 
-                            ? adjustColor(baseColor, 0.8) 
-                            : baseColor;
-
                         return { 
                             ...dt,
                             type: datasetType,
                             hidden: dt.label?.includes("Hospital") && !props.showMedianHospital,
                             pointRadius: categoryName === "angel_awards" ? 4 : 0,
-                            borderColor: categoryName === "angel_awards" ? angelAwardsColor : color,
-                            backgroundColor: categoryName === "angel_awards" ? angelAwardsColor : color,
+                            borderColor: dt.label?.includes("Hospital") ? color : baseColor,
+                            backgroundColor: dt.label?.includes("Hospital") ? color : baseColor,
+                            spanGaps: true,
                             label: dt.label && (dt.label !== "1" || chartSettings.variableType !== "categorical_binary") 
-                                    ? `${dt.label} (${chartSettings.aggregationType})` 
-                                    : `${chartSettings.variableName} (${chartSettings.aggregationType})`, 
+                                ? `${dt.label} (${chartSettings.aggregationType})` 
+                                : `${chartSettings.variableName} (${chartSettings.aggregationType})`, 
                         };
                     }) 
                 }}
-                options={options} />
+            options={options} />
         </div>
         {error &&
             <p className={cn(

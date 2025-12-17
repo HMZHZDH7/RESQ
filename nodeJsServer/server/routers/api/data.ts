@@ -2,6 +2,7 @@ import express from "express";
 import fs from 'fs';
 import csv from "csv-parser";
 import jStat from "jstat";
+import { allowedCustomVariables, allowedCustomComparators } from "../../../data/custom-variables";
 
 /**
  * Type definition for a single data record.
@@ -139,140 +140,224 @@ const dataApi = express.Router();
 dataApi.post("/:categoryName/:variableName", async (req, res) => {
     const { categoryName, variableName } = req.params;
     const { filters } = req.body;
+    const allData = await getDataFromFile();
 
-    if (categoryName?.toLowerCase() === "angel_awards") 
-        {
-            try {
-                const allData = await getDataFromFile();
-                let variableKey = variableName.toLowerCase();
-                let raw: Result[];
-                let threshold: number | string;
+    if (categoryName?.toLowerCase().replace(/[-\s]/g, "_") === "custom_variables") {
 
-                if (variableKey.startsWith("door_to_needle")) {
-                    raw = allData.filter(d => d.variable.toLowerCase() === "door_to_needle" && d.Value !== "");
-                    if (variableKey.endsWith("_60")) threshold = 60;
-                    else if (variableKey.endsWith("_45")) threshold = 45;
-                    else return res.status(400).json({ error: "Unknown threshold for door_to_needle" });
-                } else if (variableKey.startsWith("door_to_groin")) {
-                    raw = allData.filter(d => d.variable.toLowerCase() === "door_to_groin" && d.Value !== "");
-                    if (variableKey.endsWith("_120")) threshold = 120;
-                    else if (variableKey.endsWith("_90")) threshold = 90;
-                    else return res.status(400).json({ error: "Unknown threshold for door_to_groin" });
-                } else if (variableKey.startsWith("stroke_undergoing_dysphagia_screening")) {
-                    let filteredData = allData.filter(d => d.variable.toLowerCase() === "dysphagia_screening_type");
+        const variableSet = new Set(allowedCustomVariables.map(v => v.toLowerCase()));
+        const variableKey = (filters?.variable ?? variableName).toLowerCase();
 
-                    if (filters?.country) {
-                        filteredData = filteredData.filter(d => d.site_country === filters.country);
-                    }
-                    if (filters?.site) {
-                        filteredData = filteredData.filter(d => d.site_id === filters.site);
-                    }
+        if (!variableSet.has(variableKey)) {
+            return res.status(400).json({ error: "Variable non autorisée" });
+        }
 
-                    const grouped = groupBy(filteredData, d => d.YQ);
-                    const labels = Object.keys(grouped).sort();
+        let variableData = allData.filter(
+            d => d.variable.toLowerCase() === variableKey && d.Value !== ""
+        );
 
-                    const data = labels.map(label => {
-                        const allForLabel = grouped[label]; 
-                        if (!allForLabel || allForLabel.length === 0) return 0;
+        const rawComparator = filters?.comparator;
+        const rawValue = filters?.comparisonValue;
 
-                        const screenedForLabel = allForLabel.filter(d => d.Value && d.Value.trim() !== "");
-                        const countScreened = screenedForLabel.length;
-                        const totalPatients = allForLabel.length;
+        let comparator = undefined;
+        let comparisonValue = undefined;
 
-                        return (countScreened / totalPatients) * 100;
-                    });
+        if (typeof rawComparator === "string" && allowedCustomComparators.includes(rawComparator)) {
+            comparator = rawComparator;
+        }
 
-                    return res.json({
-                        labels,
-                        datasets: [
-                            {
-                                label: "Percentage of stroke patients undergoing dysphagia screening",
-                                data
-                            }
-                        ]
-                    });
-                } else if (variableKey.startsWith("imaging_ct")) {
-                    let filteredData = allData.filter(d => d.variable.toLowerCase() === "imaging_type");
+        if (rawValue !== undefined && rawValue !== null && rawValue !== "") {
+            const n = Number(rawValue);
+            if (!isNaN(n)) comparisonValue = n;
+        }
 
-                    if (filters?.country) {
-                        filteredData = filteredData.filter(d => d.site_country === filters.country);
-                    }
-                    if (filters?.site) {
-                        filteredData = filteredData.filter(d => d.site_id === filters.site);
-                    }
+        if (comparator && comparisonValue !== undefined) {
 
-                    const grouped = groupBy(filteredData, d => d.YQ);
-                    const labels = Object.keys(grouped).sort();
+            variableData = variableData.filter(d => {
+                const value = Number(d.Value);
+                if (isNaN(value)) return false;
 
-                    const data = labels.map(label => {
-                        const values = grouped[label].map(i => i.Value.toLowerCase());
-                        if (values.length === 0) return 0;
-
-                        const countCT = values.filter(v => v.includes("ct")).length;
-                        return (countCT / values.length) * 100;
-                    });
-
-                    return res.json({
-                        labels,
-                        datasets: [
-                            {
-                                label: "Percentage of CT imaging",
-                                data
-                            }
-                        ]
-                    });
-                } else {
-                    return res.status(400).json({ error: "Unknown angel_awards variable" });
+                switch (comparator) {
+                    case "<": return value < comparisonValue;
+                    case ">": return value > comparisonValue;
+                    case "=": return value === comparisonValue;
+                    default: return true;
                 }
+            });
+        }
+
+        if (filters?.country) {
+            variableData = variableData.filter(d => d.site_country === filters.country);
+        }
+        if (filters?.site) {
+            variableData = variableData.filter(d => d.site_id === filters.site);
+        }
         
-                let filtered = raw;
+        if (variableData.length === 0) {
+            return res.status(200).json({
+                labels: [],
+                datasets: [{ label: variableKey, data: [] }]
+            });
+        }
+
+        console.log("Comparator reçu:", comparator, "Value:", comparisonValue);
+
+        const grouped = groupBy(variableData, d => d.YQ);
+        const labels = Object.keys(grouped).sort();
+
+        const data = labels.map(label => {
+            const values = grouped[label]
+                .map(r => Number(r.Value))
+                .filter(v => !isNaN(v));
+
+            if (!values.length) return null;
+
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+
+            return Math.min(100, Math.max(0, avg));
+        });
+
+
+
+        return res.json({
+            labels,
+            datasets: [{ label: variableKey, data }]
+        });
+    }
+    
+    if (categoryName?.toLowerCase() === "angel_awards") 
+    {
+        try {
+            const allData = await getDataFromFile();
+            let variableKey = variableName.toLowerCase();
+            let raw: Result[];
+            let threshold: number | string;
+
+            if (variableKey.startsWith("door_to_needle")) {
+                raw = allData.filter(d => d.variable.toLowerCase() === "door_to_needle" && d.Value !== "");
+                if (variableKey.endsWith("_60")) threshold = 60;
+                else if (variableKey.endsWith("_45")) threshold = 45;
+                else return res.status(400).json({ error: "Unknown threshold for door_to_needle" });
+            } else if (variableKey.startsWith("door_to_groin")) {
+                raw = allData.filter(d => d.variable.toLowerCase() === "door_to_groin" && d.Value !== "");
+                if (variableKey.endsWith("_120")) threshold = 120;
+                else if (variableKey.endsWith("_90")) threshold = 90;
+                else return res.status(400).json({ error: "Unknown threshold for door_to_groin" });
+            } else if (variableKey.startsWith("stroke_undergoing_dysphagia_screening")) {
+                let filteredData = allData.filter(d => d.variable.toLowerCase() === "dysphagia_screening_type");
 
                 if (filters?.country) {
-                    filtered = filtered.filter(d => d.site_country === filters.country);
+                    filteredData = filteredData.filter(d => d.site_country === filters.country);
+                }
+                if (filters?.site) {
+                    filteredData = filteredData.filter(d => d.site_id === filters.site);
                 }
 
-                if (filters?.site) {
-                    filtered = filtered.filter(d => d.site_id === filters.site);
-                }               
+                const grouped = groupBy(filteredData, d => d.YQ);
+                const labels = Object.keys(grouped).sort();
 
-                const grouped = groupBy(filtered, d => d.YQ);
+                const data = labels.map(label => {
+                    const allForLabel = grouped[label]; 
+                    if (!allForLabel || allForLabel.length === 0) return null;
 
-                const computeThresholdData = (grouped: Record<string, Result[]>, threshold: number | string) => {
-                    const labels = Object.keys(grouped).sort();
+                    const screenedForLabel = allForLabel.filter(d => d.Value && d.Value.trim() !== "");
+                    const countScreened = screenedForLabel.length;
+                    const totalPatients = allForLabel.length;
 
-                    const data = labels.map(label => {
-                        const values = grouped[label].map(i => i.Value).filter(v => v !== "");
-
-                        if (values.length === 0) return 0;
-
-                        if (typeof threshold === "number") {
-                            const count = values.map(Number).filter(v => !isNaN(v) && v <= threshold).length;
-                            return (count / values.length) * 100;
-                        } else {
-                            const count = values.filter(v => v.includes(threshold as string)).length;
-                            return (count / values.length) * 100;
-                        }
-                    });
-
-                    return { labels, data };
-                };
-
-                const result = computeThresholdData(grouped, threshold);
+                    return (countScreened / totalPatients) * 100;
+                });
 
                 return res.json({
-                    labels: result.labels,
+                    labels,
                     datasets: [
                         {
-                            label: typeof threshold === "number" ? `Percentage ≤ ${threshold} min` : `Percentage of ${threshold}`,
-                            data: result.data
+                            label: "Percentage of stroke patients undergoing dysphagia screening",
+                            data
                         }
                     ]
                 });
-            } catch (e) {
-                console.error(e);
-                return res.status(500).json({ error: "Door-to-Needle calculation failed" });
+            } else if (variableKey.startsWith("imaging_ct")) {
+                let filteredData = allData.filter(d => d.variable.toLowerCase() === "imaging_type");
+
+                if (filters?.country) {
+                    filteredData = filteredData.filter(d => d.site_country === filters.country);
+                }
+                if (filters?.site) {
+                    filteredData = filteredData.filter(d => d.site_id === filters.site);
+                }
+
+                const grouped = groupBy(filteredData, d => d.YQ);
+                const labels = Object.keys(grouped).sort();
+
+                const data = labels.map(label => {
+                    const values = grouped[label].map(i => i.Value.toLowerCase());
+                    if (values.length === 0) return null;
+
+                    const countCT = values.filter(v => v.includes("ct")).length;
+                    return (countCT / values.length) * 100;
+                });
+
+                return res.json({
+                    labels,
+                    datasets: [
+                        {
+                            label: "Percentage of CT imaging",
+                            data
+                        }
+                    ]
+                });
+            } else {
+                return res.status(400).json({ error: "Unknown angel_awards variable" });
             }
+        
+            let filtered = raw;
+
+            if (filters?.country) {
+                filtered = filtered.filter(d => d.site_country === filters.country);
+            }
+
+            if (filters?.site) {
+                filtered = filtered.filter(d => d.site_id === filters.site);
+            }               
+
+            const grouped = groupBy(filtered, d => d.YQ);
+
+            const computeThresholdData = (grouped: Record<string, Result[]>, threshold: number | string) => {
+                const labels = Object.keys(grouped).sort();
+
+                const data = labels.map(label => {
+                    const values = grouped[label].map(i => i.Value).filter(v => v !== "");
+
+                    if (values.length === 0) return null;
+
+                    if (typeof threshold === "number") {
+                        const count = values.map(Number).filter(v => !isNaN(v) && v <= threshold).length;
+                        return (count / values.length) * 100;
+                    } else {
+                        const count = values.filter(v => v.includes(threshold as string)).length;
+                        return (count / values.length) * 100;
+                    }
+                });
+
+                return { labels, data };
+            };
+
+            const result = computeThresholdData(grouped, threshold);
+
+            return res.json({
+                labels: result.labels,
+                datasets: [
+                    {
+                        label: typeof threshold === "number" ? `Percentage ≤ ${threshold} min` : `Percentage of ${threshold}`,
+                        data: result.data
+                    }
+                ]
+            });
+        } catch (e) {
+            console.error(e);
+            return res.status(500).json({ error: "Door-to-Needle calculation failed" });
         }
+    }    
+
     /**
      * Filters and processes data based on the request parameters, then sends the response.
      */
@@ -281,27 +366,22 @@ dataApi.post("/:categoryName/:variableName", async (req, res) => {
         if (!(supportedDataOperations[aggregationType] ?? []).includes(variableType.toLowerCase())) return res.status(400).json({ error: "Invalid variableType parameter!" });
         
         const allData = await getDataFromFile();
-        let filteredData: Result[];
-
-        if (categoryName.toLowerCase() === "custom_variables") {
-            filteredData = allData.filter(row =>
-                row.variable?.toLowerCase() === variableName.toLowerCase() &&
-                row.Value !== ""
-            );
-
+        let filteredData;
+        const variableKey = variableName.toLowerCase();
+        const isCustom = allowedCustomVariables.map(v => v.toLowerCase()).includes(variableKey);
+        if (isCustom) {
+            filteredData = allData.filter(row => row.variable.toLowerCase() === variableName.toLowerCase() && row.Value !== "");
         } else {
             filteredData = allData.filter(row =>
                 row.TAB.toLowerCase() === categoryName.toLowerCase() &&
                 row.variable.toLowerCase() === variableName.toLowerCase() &&
-                row.SUMMARIZE_BY === aggregationType.toLowerCase() &&
-                row.ATTRIBUTE_TYPE.toLowerCase() === variableType.toLowerCase() &&
                 row.Value !== ""
             );
         }
         
         let filteredByCountry = filteredData;
         let filteredBySite = filteredData;
-        // Apply additional filters if provided
+
         if (filters) {
             if (filters.country) {
                 filteredByCountry = filteredData.filter(d => d.site_country === filters.country)
@@ -378,29 +458,33 @@ dataApi.post("/:categoryName/:variableName", async (req, res) => {
             aggregationType: string,
             labels: string[],
             keys?: string[]
-        ): { label: string, data: number[] }[] => {
+        ): { label: string, data: number [] }[] => {
             const grouped = groupBy(data, d => d.YQ);
-            const datasets: { label: string, data: number[] }[] = [];
+            const datasets: { label: string, data: number [] }[] = [];
 
             if (aggregationType === "percentage" && keys) {
                 keys.forEach(key => {
-                    const dataValues = labels.map(l => {
+                    const dataValues: number [] = labels.map(l => {
                         const values = grouped[l] ?? [];
                         const total = values.length;
                         const count = values.filter(d => d.Value === key).length;
-                        return total > 0 ? (count / total) * 100 : 0;
+                        if (total === 0) return NaN;
+                        return (count / total) * 100;
                     });
                     datasets.push({ label: `${labelPrefix} - ${key}`, data: dataValues });
                 });
             } else {
-                const dataValues = labels.map(l => {
-                    const values = (grouped[l] ?? []).map(d => parseFloat(d.Value));
-                    if (!values.length) return 0;
+                const dataValues: number [] = labels.map(l => {
+                    const values = (grouped[l] ?? [])
+                    .map(d => parseFloat(d.Value))
+                    .filter(v => !isNaN(v));
+
+                    if (values.length === 0) return NaN;
                     switch (aggregationType) {
                         case "median": return median(values);
                         case "mean": return mean(values);
                         case "count": return sum(values);
-                        default: return 0;
+                        default: return NaN;
                     }
                 });
                 datasets.push({ label: labelPrefix, data: dataValues });
@@ -468,7 +552,11 @@ dataApi.post("/:categoryName/:variableName", async (req, res) => {
                 let diffMedian: number | null = null;
                 let pctEvolution: string | null = null;
 
-                if (prevValues.length > 1 && lastValues.length > 1) {
+                const cleanPrev = prevValues.filter(v => !isNaN(v));
+                const cleanLast = lastValues.filter(v => !isNaN(v));
+
+                if (cleanPrev.length > 1 && cleanLast.length > 1) {
+
                     const medianPrev = median(prevValues);
                     const medianLast = median(lastValues);
                     
