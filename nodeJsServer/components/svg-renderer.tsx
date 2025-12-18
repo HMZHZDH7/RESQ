@@ -1,0 +1,60 @@
+import React from "react";
+
+interface SvgRendererProps {
+  svgContent: string;
+  width?: number;
+  height?: number;
+  className?: string;
+}
+const SvgRenderer = ({ svgContent, width, height, className = "" }: SvgRendererProps) => {
+
+  if (!svgContent || typeof svgContent !== "string") {
+    console.warn("[SvgRenderer] Empty or invalid SVG content");
+    return null; 
+  }
+
+  // Initialize cleanedSvgText with the original SVG content
+  let cleanedSvgText = svgContent;
+
+  // Remove width attribute from the SVG if a new width is provided
+  if (width) {
+    cleanedSvgText = cleanedSvgText.replace(
+      /<svg([^>]*?)\s*width="[^"]*"([^>]*)>/,
+      `<svg$1$2>`
+    );
+  }
+
+  // Remove height attribute from the SVG if a new height is provided
+  if (height) {
+    cleanedSvgText = cleanedSvgText.replace(
+      /<svg([^>]*?)\s*height="[^"]*"([^>]*)>/,
+      `<svg$1$2>`
+    );
+  };
+
+  // Remove existing class attribute if a new className is provided
+  if (className) {
+    cleanedSvgText = cleanedSvgText.replace(
+      /<svg([^>]*?)\s*class="[^"]*"([^>]*)>/,
+      `<svg$1$2>`
+    );
+  };
+
+  // Inject width, height, and className attributes into the SVG root
+  const svgWithProps = cleanedSvgText.replace(
+    /<svg([^>]*?)>/,
+    `<svg$1 ${width ? `width="${width}"` : ""} ${
+      height ? `height="${height}"` : ""
+    } ${className ? `class="${className}"` : ""}>`
+  );
+
+  // Render the SVG content with the provided properties inside a container
+  return (
+    <div
+      className="svg-container"
+      dangerouslySetInnerHTML={{ __html: svgWithProps }}
+    />
+  );
+};
+
+export { SvgRenderer };
