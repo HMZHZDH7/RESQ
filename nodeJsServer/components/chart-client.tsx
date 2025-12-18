@@ -420,7 +420,7 @@ const ChartClient = ({ categoryName, chartSettings, filters, onPValue, ...props 
                 type={type}
                 plugins={[angelAwardsBackgroundPlugin, naSymbolPlugin]}
                 data={{ 
-                    labels: data.labels, 
+                    labels: data.labels,   
                     datasets: data.datasets.map(dt => {
                         
                         const baseColor = getColorForSuffix(dt.label ?? "");
